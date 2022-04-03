@@ -8,45 +8,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-class MCMC_MH:
-    def __init__(self, log_target_pdf, log_proposal_pdf, proposal_sampler, initial, random_seed):
-        self.log_target_pdf = log_target_pdf #arg (smpl)
-        self.log_proposal_pdf = log_proposal_pdf #arg (from_smpl, to_smpl)
-        self.proposal_sampler = proposal_sampler #function with argument (smpl)
-        
-        self.initial = initial
-        
+class MCMC_base:
+    def __init__(self, initial):
         self.MC_sample = [initial]
 
-        self.num_total_iters = 0
-        self.num_accept = 0
-
-        self.random_seed = random_seed
-        seed(random_seed)
-        
-
-    def log_r_calculator(self, candid, last):
-        log_r = (self.log_target_pdf(candid) - self.log_proposal_pdf(from_smpl=last, to_smpl=candid) - \
-             self.log_target_pdf(last) + self.log_proposal_pdf(from_smpl=candid, to_smpl=last))
-        return log_r
-
     def sampler(self):
-        last = self.MC_sample[-1]
-        candid = self.proposal_sampler(last) #기존 state 집어넣게
-        unif_sample = uniform(0, 1)
-        log_r = self.log_r_calculator(candid, last)
-        # print(log(unif_sample), log_r) #for debug
-        if log(unif_sample) < log_r:
-            self.MC_sample.append(candid)
-            self.num_total_iters += 1
-            self.num_accept += 1
-        else:
-            self.MC_sample.append(last)
-            self.num_total_iters += 1
+        pass
 
     def generate_samples(self, num_samples, pid=None, verbose=True, print_iter_cycle=500):
         start_time = time.time()
-        for i in range(num_samples):
+        for i in range(1, num_samples):
             self.sampler()
             
             if i==100 and verbose:
@@ -62,12 +33,10 @@ class MCMC_MH:
         
         if pid is not None and verbose:
             print("pid:",pid, "iteration", num_samples, "/", num_samples, " done! (elapsed time for execution: ", elap_time//60,"min ", elap_time%60,"sec)")
-            print("acceptance rate: ", round(self.num_accept / self.num_total_iters, 4))
         elif pid is None and verbose:
             print("iteration", num_samples, "/", num_samples, " done! (elapsed time for execution: ", elap_time//60,"min ", elap_time%60,"sec)")
-            print("acceptance rate: ", round(self.num_accept / self.num_total_iters, 4))
 
-        
+
     def write_samples(self, filename: str):
         with open(filename + '.csv', 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
@@ -75,6 +44,62 @@ class MCMC_MH:
                 csv_row = sample
                 writer.writerow(csv_row)
 
+
+class MCMC_Gibbs(MCMC_base):
+    def sampler(self):
+        last = self.MC_sample[-1]
+        new = [x for x in last] #[nu, theta]
+        #update new
+        new = self.full_conditional_sampler(new)
+
+        self.MC_sample.append(new)
+    
+    def full_conditional_sampler(self, last_param):
+        new_sample = [x for x in last_param]
+        #update new
+
+        return new_sample
+
+
+class MCMC_MH(MCMC_base):
+    #override
+    def __init__(self, log_target_pdf, log_proposal_pdf, proposal_sampler, initial, random_seed):
+        self.log_target_pdf = log_target_pdf #arg (smpl)
+        self.log_proposal_pdf = log_proposal_pdf #arg (from_smpl, to_smpl)
+        self.proposal_sampler = proposal_sampler #function with argument (smpl)
+        
+        self.initial = initial
+        
+        self.MC_sample = [initial]
+
+        self.num_total_iters = 0
+        self.num_accept = 0
+
+        self.random_seed = random_seed
+        seed(random_seed)
+        
+    def _log_r_calculator(self, candid, last):
+        log_r = (self.log_target_pdf(candid) - self.log_proposal_pdf(from_smpl=last, to_smpl=candid) - \
+             self.log_target_pdf(last) + self.log_proposal_pdf(from_smpl=candid, to_smpl=last))
+        return log_r
+
+    def sampler(self):
+        last = self.MC_sample[-1]
+        candid = self.proposal_sampler(last) #기존 state 집어넣게
+        unif_sample = uniform(0, 1)
+        log_r = self._log_r_calculator(candid, last)
+        # print(log(unif_sample), log_r) #for debug
+        if log(unif_sample) < log_r:
+            self.MC_sample.append(candid)
+            self.num_total_iters += 1
+            self.num_accept += 1
+        else:
+            self.MC_sample.append(last)
+            self.num_total_iters += 1
+
+    def generate_samples(self, num_samples, pid=None, verbose=True, print_iter_cycle=500):
+        super().generate_samples(num_samples, pid=None, verbose=True, print_iter_cycle=500)
+        print("acceptance rate: ", round(self.num_accept / self.num_total_iters, 4))
 
 
 class MCMC_Diag:
@@ -105,9 +130,9 @@ class MCMC_Diag:
             self.set_variable_names(variable_names)
 
 
-    def set_mc_sample_from_MCMC_MH(self, inst_MCMC_MH, variable_names=None):
-        self.MC_sample = inst_MCMC_MH.MC_sample
-        self.num_dim = len(inst_MCMC_MH.MC_sample[0])
+    def set_mc_sample_from_MCMC_instance(self, inst_MCMC, variable_names=None):
+        self.MC_sample = inst_MCMC.MC_sample
+        self.num_dim = len(inst_MCMC.MC_sample[0])
         if variable_names is not None:
             self.set_variable_names(variable_names)
 
