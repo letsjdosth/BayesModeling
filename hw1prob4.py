@@ -30,23 +30,35 @@ class MCMC_Gibbs_hw1p5(MCMC_Gibbs):
 seed(20220402)
 
 initial = [0.5, 0.5]
-gibbs_inst1 = MCMC_Gibbs_hw1p5(initial, c=0.5)
-gibbs_inst1.generate_samples(10000)
+gibbs_inst1 = MCMC_Gibbs_hw1p5(initial, c=0.3)
+gibbs_inst1.generate_samples(1000)
 gibbs_inst1_diag = MCMC_Diag()
 gibbs_inst1_diag.set_mc_sample_from_MCMC_instance(gibbs_inst1)
+gibbs_inst1_diag.set_variable_names(["x","y"])
 gibbs_inst1_diag.show_traceplot((1,2))
-gibbs_inst1_diag.show_acf(30, (1,2))
-gibbs_inst1_diag.show_hist((1,2))
+# gibbs_inst1_diag.show_acf(30, (1,2))
+# gibbs_inst1_diag.show_hist((1,2))
 gibbs_inst1_diag.show_scatterplot(0,1)
 
 
-gibbs_inst2 = MCMC_Gibbs_hw1p5(initial, c=0.1)
-gibbs_inst2.generate_samples(10000)
+gibbs_inst2 = MCMC_Gibbs_hw1p5(initial, c=0.05)
+gibbs_inst2.generate_samples(1000)
 gibbs_inst2_diag = MCMC_Diag()
 gibbs_inst2_diag.set_mc_sample_from_MCMC_instance(gibbs_inst2)
+gibbs_inst2_diag.set_variable_names(["x","y"])
 gibbs_inst2_diag.show_traceplot((1,2))
-gibbs_inst2_diag.show_acf(30, (1,2))
-gibbs_inst2_diag.show_hist((1,2))
+# gibbs_inst2_diag.show_acf(30, (1,2))
+# gibbs_inst2_diag.show_hist((1,2))
 gibbs_inst2_diag.show_scatterplot(0,1)
 
+
+gibbs_inst3 = MCMC_Gibbs_hw1p5(initial, c=0.01)
+gibbs_inst3.generate_samples(1000)
+gibbs_inst3_diag = MCMC_Diag()
+gibbs_inst3_diag.set_mc_sample_from_MCMC_instance(gibbs_inst3)
+gibbs_inst3_diag.set_variable_names(["x","y"])
+gibbs_inst3_diag.show_traceplot((1,2))
+# gibbs_inst3_diag.show_acf(30, (1,2))
+# gibbs_inst3_diag.show_hist((1,2))
+gibbs_inst3_diag.show_scatterplot(0,1)
 
