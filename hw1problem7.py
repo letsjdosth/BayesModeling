@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 observations = np.array([10, 10, 12, 11, 9])
 obs_mean = np.mean(observations)
 obs_S2 = sum([(y-obs_mean)**2 for y in observations])
-print(obs_mean, obs_S2/4)
+print(obs_mean, obs_S2/4) #10.4, 1.3
 
 # grid_x = np.linspace(9, 12, 1000)
 grid_x = np.linspace(obs_mean-3, obs_mean+3, 1000)
@@ -27,7 +27,8 @@ meshgrid_x, meshgrid_y = np.meshgrid(grid_x, grid_y)
 def generate_contour_level_matrix_as_true(mu_meshgrid, sigma2_meshgrid):
     term1 = scipy.stats.norm.logpdf(mu_meshgrid, loc=obs_mean, scale=np.sqrt(sigma2_meshgrid/5))
     term2 = scipy.stats.invgamma.logpdf(sigma2_meshgrid, a=2, scale=obs_S2/2)
-    #def scipy.stats.invgamma: scaled after inversion from gamma distribution
+    # def scipy.stats.invgamma: scaled after inversion from gamma distribution
+    # scipy invgamma ref: https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.invgamma.html#scipy.stats.invgamma
     return np.exp(term1+term2)/np.sum(np.exp(term1+term2))
 
 value_mesh_as_true = generate_contour_level_matrix_as_true(meshgrid_x, meshgrid_y)
@@ -45,8 +46,7 @@ def generate_contour_level_matrix_as_rounded(mu_meshgrid, sigma2_meshgrid):
 value_mesh_as_rounded = generate_contour_level_matrix_as_rounded(meshgrid_x, meshgrid_y)
 
 
-
-def mean_from_meshgrid(meshgrid_x, meshgrid_y, meshgrid_val, print_round=5):
+def summary_from_meshgrid(meshgrid_x, meshgrid_y, meshgrid_val, print_round=5):
     margianl_x_prob = np.sum(meshgrid_val, axis=0)
     margianl_x_prob = margianl_x_prob/np.sum(margianl_x_prob)
     x_mean = np.sum(meshgrid_x[0,:] * margianl_x_prob)
@@ -60,10 +60,13 @@ def mean_from_meshgrid(meshgrid_x, meshgrid_y, meshgrid_val, print_round=5):
     y_var = y2_mean - y_mean**2
     return (round(x_mean, print_round), round(x_var, print_round)), (round(y_mean, print_round), round(y_var, print_round))
 
-print(mean_from_meshgrid(meshgrid_x, meshgrid_y, value_mesh_as_true))
-print(mean_from_meshgrid(meshgrid_x, meshgrid_y, value_mesh_as_rounded))
 
+# part of (c)
+## pairs of mean and variance
+print(summary_from_meshgrid(meshgrid_x, meshgrid_y, value_mesh_as_true))
+print(summary_from_meshgrid(meshgrid_x, meshgrid_y, value_mesh_as_rounded))
 
+## contour plots
 ax1 = plt.subplot(121)
 plt.contour(meshgrid_x, meshgrid_y, value_mesh_as_true, levels=10)
 ax2 = plt.subplot(122, sharex=ax1)
@@ -71,17 +74,25 @@ plt.contour(meshgrid_x, meshgrid_y, value_mesh_as_rounded, levels=10)
 plt.show()
 
 
-# # choose
-# vectorized_mesh_x = np.reshape(meshgrid_x, (meshgrid_x.size,1))
-# vectorized_mesh_y = np.reshape(meshgrid_y, (meshgrid_y.size,1))
-# vectorized_mesh_as_rounded = np.reshape(value_mesh_as_rounded, value_mesh_as_rounded.size)
-# print(vectorized_mesh_as_rounded.size)
-# rng = np.random.default_rng()
-# posterior_samples_idx = rng.choice(np.arange(vectorized_mesh_as_rounded.size), size=5, p=vectorized_mesh_as_rounded)
-# print(posterior_samples_idx)
+# part of (d)
+## grid sampling
+vectorized_mesh_x = np.reshape(meshgrid_x, (meshgrid_x.size,1))
+vectorized_mesh_y = np.reshape(meshgrid_y, (meshgrid_y.size,1))
+vectorized_mesh_as_rounded = np.reshape(value_mesh_as_rounded, value_mesh_as_rounded.size)
+rng = np.random.default_rng()
+posterior_samples_idx = rng.choice(np.arange(vectorized_mesh_as_rounded.size), size=10000, p=vectorized_mesh_as_rounded)
 
+## (z1, z2) posterior predictive sampling
+z1_vec = []
+z2_vec = []
+for idx in posterior_samples_idx:
+    # scipy truncated normal ref: https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.truncnorm.html#scipy.stats.truncnorm
+    loc_param = vectorized_mesh_x[idx]
+    scale_param = np.sqrt(vectorized_mesh_y[idx])
+    arg_a = (observations[0] - 0.5 - loc_param) / scale_param
+    arg_b = (observations[0] + 0.5 - loc_param) / scale_param
+    z1_vec.append(scipy.stats.truncnorm.rvs(a=arg_a, b=arg_b, loc=loc_param, scale=scale_param))
+    #note that y1=y2=10, so we can share arg_a and arg_b
+    z2_vec.append(scipy.stats.truncnorm.rvs(a=arg_a, b=arg_b, loc=loc_param, scale=scale_param))
 
-# z1_vec = []
-# z2_vec = []
-# for idx in posterior_samples_idx:
-#     rng.normal(loc=vectorized_mesh_x[idx], scale=np.sqrt(vectorized_mesh_y[idx]))
+print(np.mean([(z1-z2)**2 for z1, z2 in zip(z1_vec, z2_vec)]))
