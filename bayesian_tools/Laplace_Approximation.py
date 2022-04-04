@@ -1,6 +1,6 @@
 import numpy as np
 
-from newton import NewtonUnconstrained
+from optim_newton import NewtonUnconstrained
 
 class DistLaplaceApprox:
     def __init__(self, density_log_kernel, 

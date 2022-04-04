@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 seed(20220402)
 observations = [43, 44, 45, 46.5, 47.5]
 
+# draw posterior samples using grid approximation
 def unnormalized_cauchy_log_pdf(eval_pt, location, scale=1):
     denom = 1+((eval_pt-location)/scale)**2
     return -log(denom)
