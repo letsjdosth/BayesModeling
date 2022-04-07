@@ -1,5 +1,3 @@
-from random import betavariate
-
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -35,17 +33,17 @@ plt.show()
 
 
 ## Using marginal posterior directly
-# prior_beta_parameter = np.array([1, 3])
-# obs_marginal_data = np.array([1439, 78 + 15 + 16])
-# posterior_beta_parameter = prior_beta_parameter + obs_marginal_data
+prior_beta_parameter = np.array([1, 3])
+obs_marginal_data = np.array([1439, 78 + 15 + 16])
+posterior_beta_parameter = prior_beta_parameter + obs_marginal_data
 
-# beta_sampler_inst = np.random.default_rng()
-# beta_post_samples = beta_sampler_inst.beta(posterior_beta_parameter[0], posterior_beta_parameter[1], 1000)
+beta_sampler_inst = np.random.default_rng()
+beta_post_samples = beta_sampler_inst.beta(posterior_beta_parameter[0], posterior_beta_parameter[1], 1000)
 
-# print("mean:", round(np.mean(beta_post_samples), 6))
-# print("median:", round(np.median(beta_post_samples), 6))
-# print("var:", round(np.var(beta_post_samples), 6))
-# print("95%CI:", [round(x, 6) for x in np.quantile(beta_post_samples, [0.025, 0.975])])
+print("mean:", round(np.mean(beta_post_samples), 6))
+print("median:", round(np.median(beta_post_samples), 6))
+print("var:", round(np.var(beta_post_samples), 6))
+print("95%CI:", [round(x, 6) for x in np.quantile(beta_post_samples, [0.025, 0.975])])
 
 
 # considering MAR
@@ -89,7 +87,12 @@ gibbs_diag_inst1 = MCMC_Diag()
 gibbs_diag_inst1.set_mc_sample_from_MCMC_instance(gibbs_inst1)
 gibbs_diag_inst1.set_variable_names(["p11","p12","p21","p22"])
 gibbs_diag_inst1.burnin(2000)
+gibbs_diag_inst1.show_acf(30, (2,2))
 
 gibbs_diag_inst1.print_summaries(round=3)
 gibbs_diag_inst1.graphic_traceplot_mean=True
 gibbs_diag_inst1.show_traceplot((2,2))
+
+#p11
+print("p11 ESS:", gibbs_diag_inst1.effective_sample_size(0))
+gibbs_diag_inst1.show_hist_specific_dim(0, True)

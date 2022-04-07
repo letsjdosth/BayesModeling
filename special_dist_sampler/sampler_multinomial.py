@@ -6,7 +6,8 @@ class Sampler_multinomial:
 
     def _parameter_support_checker(self, p_param):
         eps = 0.000000000000001
-        if sum(p_param) > 1.0+eps or sum(p_param) < 1.0-eps:
+        if sum(p_param) > 1.0+eps or sum(p_param) < 1.0-eps: 
+            #floting number problem
             print("p: ", p_param)
             print("sum(p): ", sum(p_param))
             raise ValueError("p should have sum 1")
@@ -24,7 +25,8 @@ class Sampler_multinomial:
             p_sum += p_i
             if p_sum >= unif_rv:
                 return i
-    
+        return len(p_param) #floting number problem
+
     def sampler(self, n_param, p_param):
         sample = [0 for _ in range(len(p_param))]
         for _ in range(n_param):
