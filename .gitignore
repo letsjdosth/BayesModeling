@@ -1,6 +1,7 @@
 # project files
 *.pdf
 *.ipynb
+*.html
 img/
 
 
