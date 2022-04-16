@@ -12,13 +12,13 @@ class MCMC_base:
     def __init__(self, initial):
         self.MC_sample = [initial]
 
-    def sampler(self):
+    def sampler(self, **kwargs):
         pass
 
     def generate_samples(self, num_samples, pid=None, verbose=True, print_iter_cycle=500):
         start_time = time.time()
         for i in range(1, num_samples):
-            self.sampler()
+            self.sampler(iter_idx=i)
             
             if i==100 and verbose:
                 elap_time_head_iter = time.time()-start_time
@@ -46,7 +46,7 @@ class MCMC_base:
 
 
 class MCMC_Gibbs(MCMC_base):
-    def sampler(self):
+    def sampler(self, **kwargs):
         last = self.MC_sample[-1]
         new = [x for x in last] #[nu, theta]
         #update new
@@ -64,7 +64,7 @@ class MCMC_Gibbs(MCMC_base):
 class MCMC_MH(MCMC_base):
     #override
     def __init__(self, log_target_pdf, log_proposal_pdf, proposal_sampler, initial, random_seed):
-        self.log_target_pdf = log_target_pdf #arg (smpl)
+        self.log_target_pdf = log_target_pdf #arg (from_smpl)
         self.log_proposal_pdf = log_proposal_pdf #arg (from_smpl, to_smpl)
         self.proposal_sampler = proposal_sampler #function with argument (smpl)
         
@@ -83,7 +83,7 @@ class MCMC_MH(MCMC_base):
              self.log_target_pdf(last) + self.log_proposal_pdf(from_smpl=candid, to_smpl=last))
         return log_r
 
-    def sampler(self):
+    def sampler(self, **kwrgs):
         last = self.MC_sample[-1]
         candid = self.proposal_sampler(last) #기존 state 집어넣게
         unif_sample = uniform(0, 1)

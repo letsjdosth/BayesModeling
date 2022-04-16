@@ -75,7 +75,7 @@ class Gibbs_SloveniaData(MCMC_Gibbs):
         posterior_param  = [a + y for a,y in zip(last_p, now_y)]
         return self.dir_sampler.sampler(posterior_param)
 
-    def sampler(self):
+    def sampler(self, **kwargs):
         last_p = self.MC_sample[-1]
         new_y = self.full_conditional_sampler_missings(last_p)
         new_p = self.full_conditional_sampler_p(last_p, new_y)

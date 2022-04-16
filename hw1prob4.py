@@ -2,7 +2,7 @@ from random import seed, uniform
 
 from bayesian_tools.MCMC_Core import MCMC_Gibbs, MCMC_Diag
 
-class MCMC_Gibbs_hw1p5(MCMC_Gibbs):
+class MCMC_Gibbs_hw1p4(MCMC_Gibbs):
     def __init__(self, initial, c):
         super().__init__(initial)
         self.c = c
@@ -19,7 +19,7 @@ class MCMC_Gibbs_hw1p5(MCMC_Gibbs):
         new_sample[1] = new_y
         return new_sample
 
-    def sampler(self):
+    def sampler(self, **kwargs):
         last = self.MC_sample[-1]
         new = [x for x in last] #[nu, theta]
         #update new
@@ -30,7 +30,7 @@ class MCMC_Gibbs_hw1p5(MCMC_Gibbs):
 seed(20220402)
 
 initial = [0.5, 0.5]
-gibbs_inst1 = MCMC_Gibbs_hw1p5(initial, c=0.3)
+gibbs_inst1 = MCMC_Gibbs_hw1p4(initial, c=0.3)
 gibbs_inst1.generate_samples(1000)
 gibbs_inst1_diag = MCMC_Diag()
 gibbs_inst1_diag.set_mc_sample_from_MCMC_instance(gibbs_inst1)
@@ -41,7 +41,7 @@ gibbs_inst1_diag.show_traceplot((1,2))
 gibbs_inst1_diag.show_scatterplot(0,1)
 
 
-gibbs_inst2 = MCMC_Gibbs_hw1p5(initial, c=0.05)
+gibbs_inst2 = MCMC_Gibbs_hw1p4(initial, c=0.05)
 gibbs_inst2.generate_samples(1000)
 gibbs_inst2_diag = MCMC_Diag()
 gibbs_inst2_diag.set_mc_sample_from_MCMC_instance(gibbs_inst2)
@@ -52,7 +52,7 @@ gibbs_inst2_diag.show_traceplot((1,2))
 gibbs_inst2_diag.show_scatterplot(0,1)
 
 
-gibbs_inst3 = MCMC_Gibbs_hw1p5(initial, c=0.01)
+gibbs_inst3 = MCMC_Gibbs_hw1p4(initial, c=0.01)
 gibbs_inst3.generate_samples(1000)
 gibbs_inst3_diag = MCMC_Diag()
 gibbs_inst3_diag.set_mc_sample_from_MCMC_instance(gibbs_inst3)
