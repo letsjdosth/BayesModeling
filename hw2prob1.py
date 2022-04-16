@@ -141,8 +141,8 @@ if __name__=="__main__":
     tau_mu_samples_a = [sample[:2] for sample in cond_sampler_inst_a.MC_sample]
     diag_inst_a1.set_mc_samples_from_list(tau_mu_samples_a)
     diag_inst_a1.set_variable_names(["tau","mu"])
-    # diag_inst_a1.show_traceplot((1,2))
-    # diag_inst_a1.show_hist((1,2))
+    diag_inst_a1.show_traceplot((1,2))
+    diag_inst_a1.show_hist((1,2))
     
     diag_inst_a2 = MCMC_Diag()
     theta_i_samples_a = [sample[2] for sample in cond_sampler_inst_a.MC_sample]
@@ -177,8 +177,7 @@ if __name__=="__main__":
     tau_mu_samples_d = [sample[:2] for sample in cond_sampler_inst_d.MC_sample]
     diag_inst_d1.set_mc_samples_from_list(tau_mu_samples_d)
     diag_inst_d1.set_variable_names(["tau","mu"])
-    diag_inst_d1.show_traceplot((1,2))
-    diag_inst_d1.show_hist((1,2))
+    diag_inst_d1.show_hist_specific_dim(0)
     
     diag_inst_d2 = MCMC_Diag()
     theta_i_samples_d = [sample[2] for sample in cond_sampler_inst_d.MC_sample]
