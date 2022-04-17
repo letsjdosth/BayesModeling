@@ -1,5 +1,5 @@
 import time, csv
-from math import log, exp, inf
+from math import log, exp
 from random import seed, random
 
 import numpy as np
@@ -28,7 +28,7 @@ class PosteriorRejectionSampler():
     def __init__(self, log_likelihood, prior_sampler, random_seed):
         self.log_likelihood = log_likelihood
         self.prior_sampler = prior_sampler
-        self.likelihood_supremum = None
+        self.log_likelihood_supremum = None
 
         self.random_seed = random_seed
         seed(random_seed)
@@ -46,21 +46,21 @@ class PosteriorRejectionSampler():
         optim_inst = DescentUnconstrained(neg_log_likelihood, neg_log_likelihood_gradient)
         optim_inst.run_gradient_descent_with_backtracking_line_search(np.array(initial), tolerance)
         supremum_log_likelihood = optim_inst.get_min() * (-1)
-        print(supremum_log_likelihood, "at", optim_inst.get_arg_min())
-        self.likelihood_supremum = supremum_log_likelihood + tolerance
+        print("Maximum log-likelihood value:", supremum_log_likelihood, "at", optim_inst.get_arg_min())
+        self.log_likelihood_supremum = supremum_log_likelihood + tolerance
 
     # def find_sup_log_likelihood_by_newton(self, log_likelihood_gradient, log_likelihood_hessian, initial, tolerance=0.0001):
     #     pass
 
     def set_sup_log_likelihood_directly(self, sup_value):
-        self.likelihood_supremum = sup_value
+        self.log_likelihood_supremum = sup_value
 
     def _log_r_calculator(self, candid):
-        log_r = self.log_likelihood(candid) - self.likelihood_supremum
+        log_r = self.log_likelihood(candid) - self.log_likelihood_supremum
         return log_r
 
     def sampler(self, **kwrgs):
-        if self.likelihood_supremum is None:
+        if self.log_likelihood_supremum is None:
             raise AttributeError("find or set the sup_log_likelihood value first")
         
         candid_sample = self.prior_sampler()
@@ -104,11 +104,12 @@ class PosteriorRejectionSampler():
 
     def empirical_normalized_constant(self):
         print("Warning: for this function, you had to specify the log_likelihood function with its full constants")
-        return self.likelihood_supremum * self.num_accept/self.num_total_iters
+        return exp(self.log_likelihood_supremum) * self.num_accept/self.num_total_iters
 
 
 if __name__ == "__main__":
     #ex1
+    from math import inf
     def prior_sampler_ex1():
         return [random()]
     def log_likelihood_ex1(eval_pt):
@@ -125,7 +126,7 @@ if __name__ == "__main__":
     ex1_inst = PosteriorRejectionSampler(log_likelihood_ex1, prior_sampler_ex1, 20220417)
     ex1_inst.find_sup_log_likelihood_by_decent(log_likelihood_gradient_ex1, [0.1], tolerance=0.001) #first argument : gradient!!!
     # ex1_inst.set_sup_log_likelihood_directly(log(10*9*8/6) + 7*log(0.7) + 3*log(1-0.7))
-    ex1_inst.generate_samples(10000)
+    ex1_inst.generate_samples(10000, print_iter_cycle=5000)
     
     from MCMC_Core import MCMC_Diag
     ex1_diag_inst = MCMC_Diag()
