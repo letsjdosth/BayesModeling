@@ -7,10 +7,10 @@ class Sampler_Dirichlet:
     def _parameter_support_checker(self, alpha_param):
         for a in alpha_param:
             if a<=0:
-                raise ValueError("alpha should be >0")
+                raise ValueError("all elements of alpha should be >0")
 
     # def sampler(self, alpha_param: list[float]) -> list[float]: #for python 3.9 or later
-    def sampler(self, alpha_param):
+    def sampler(self, alpha_param: list):
         self._parameter_support_checker(alpha_param)
         beta = 1 #any value
         gamma_samples = [gammavariate(alpha, beta) for alpha in alpha_param]
@@ -18,7 +18,7 @@ class Sampler_Dirichlet:
         dir_sample = [smpl/sum_gamma_samples for smpl in gamma_samples]
         return dir_sample
     
-    def sampler_iter(self, sample_size: int, alpha_param):
+    def sampler_iter(self, sample_size: int, alpha_param: list):
         samples = []
         for _ in range(sample_size):
             samples.append(self.sampler(alpha_param))
