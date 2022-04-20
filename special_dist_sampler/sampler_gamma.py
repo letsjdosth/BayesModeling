@@ -37,7 +37,7 @@ class Sampler_univariate_InvGamma(GammaBase):
         self._parameter_support_checker(alpha_shape, beta_rate)
         return 1/gammavariate(alpha_shape, 1/beta_rate)
 
-class Sampler_univariate_Chisq(GammaBase):
+class Sampler_univariate_Chisq():
     # chisq(v) ~ gamma(shape=v/2, rate=1/2)
     def __init__(self, set_seed=None):
         self.gamma_sampler_inst = Sampler_univariate_Gamma(set_seed)
@@ -45,8 +45,13 @@ class Sampler_univariate_Chisq(GammaBase):
     def sampler_iter(self, sample_size: int, df):
         return self.gamma_sampler_inst.sampler_iter(sample_size, df/2, 0.5)
 
-# class Sampler_univariate_InvChisq():
-#     pass
+class Sampler_univariate_InvChisq():
+    # inv.chisq(v) ~ inv.gamma(shape=v/2, rate=1/2)
+    def __init__(self, set_seed=None):
+        self.invgamma_sampler_inst = Sampler_univariate_InvGamma(set_seed)
+
+    def sampler_iter(self, sample_size: int, df):
+        return self.invgamma_sampler_inst.sampler_iter(sample_size, df/2, 0.5)
 
 # ============================================================================
 
@@ -68,7 +73,8 @@ class Sampler_Wishart:
             raise ValueError("V_scale should be positive definite")
 
     def _sampler(self, df: int, V_scale: np.array, p_dim):
-        # do not use it directly (parameter support check is too costly, so I move it to the head of 'sampler_iter()')
+        # do not use it directly 
+        # (parameter support check is too costly, so I move it to the head of 'sampler_iter()' and run it once)
         mvn_samples = self.random_generator.multivariate_normal(np.zeros((p_dim,)), V_scale, size=df)
         wishart_sample = np.zeros(V_scale.shape)
         for mvn_sample in mvn_samples:
@@ -95,8 +101,13 @@ class Sampler_InvWishart:
         wishart_samples = self.wishart_sampler.sampler_iter(sample_size, df, V_scale)
         return [np.linalg.inv(wishart_sample) for wishart_sample in wishart_samples]
 
-# class Sampler_multivariate_Invgamma:
-#     pass
+class Sampler_multivariate_InvGamma:
+    def __init__(self, set_seed=None):
+        self.invwishart_sampler = Sampler_InvWishart(set_seed)
+    
+    def sampler_iter(self, sample_size: int, df:int, G_scale: np.array):
+        # X~inv-gamma(w,G) <=> X~inv-wishart(2w, (1/w)G)
+        return self.invwishart_sampler(sample_size, 2*df, G_scale*(1/df))
 
 
 if __name__=="__main__":
