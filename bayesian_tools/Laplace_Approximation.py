@@ -2,6 +2,50 @@ import numpy as np
 
 from optim_newton import NewtonUnconstrained
 
+class IntegralLaplaceApprox: #need test
+    #int{g(x)*exp{n*h(x)}}dx, x\in R^p, g:R^p to R, h:R^p to r
+    def __init__(self, g_coeff, h_exponent, h_exponent_gradient, h_exponent_hessian):
+        self.g_coeff = g_coeff
+        self.h_exponent = h_exponent
+        self.h_exponent_gradient = h_exponent_gradient
+        self.h_exponent_hessian = h_exponent_hessian
+        # self.p_dim = np.size(h_exponent)
+        self.h_mode = None
+
+    def find_mode_of_h(self, newton_initial, 
+            tolerance=0.001, method = "cholesky", 
+            a_slope_flatter_ratio=0.2, b_step_shorten_ratio=0.5):
+        
+        #for maximum
+        def neg_h(eval_pt):
+            return self.h_exponent(eval_pt) * (-1)  
+        
+        def neg_h_gradient(eval_pt):
+            return self.h_exponent_gradient(eval_pt) * (-1)
+        
+        def neg_h_hessian(eval_pt):
+            return self.h_exponent_hessian(eval_pt) * (-1)
+
+        # fn_objective, fn_objective_gradient, fn_objective_hessian, fn_objective_domain_indicator = None        
+        self.newton_inst = NewtonUnconstrained(neg_h, neg_h_gradient, neg_h_hessian)
+        self.newton_inst.run_newton_with_backtracking_line_search(
+            starting_pt = newton_initial, 
+            tolerance = tolerance, 
+            method = method,
+            a_slope_flatter_ratio = a_slope_flatter_ratio, 
+            b_step_shorten_ratio = b_step_shorten_ratio)
+        self.h_mode = self.newton_inst.get_arg_min()
+
+    def find_approximated_integral_value(self, M):
+        from math import pi
+        p_dim = self.h_mode.size
+        const_term = (2*pi/M)**(p_dim/2)
+        numerator = self.g_coeff(self.h_mode) * np.exp(self.h_exponent(self.h_mode) * M)
+        denominator = np.linalg.det(self.h_exponent_hessian(self.h_mode)*(-1))**(0.5)
+        return const_term*numerator/denominator
+
+
+
 class DistLaplaceApprox:
     def __init__(self, density_log_kernel, 
         density_log_kernel_gradient, 
@@ -28,7 +72,7 @@ class DistLaplaceApprox:
             a_slope_flatter_ratio=0.2, b_step_shorten_ratio=0.5):
         
         #for maximum
-        def neg_log_kernal(eval_pt):
+        def neg_log_kernel(eval_pt):
             return self.log_kernel(eval_pt) * (-1)  
         
         def neg_log_kernel_gradient(eval_pt):
@@ -38,7 +82,7 @@ class DistLaplaceApprox:
             return self.log_kernel_hessian(eval_pt) * (-1)
 
         # fn_objective, fn_objective_gradient, fn_objective_hessian, fn_objective_domain_indicator = None        
-        self.newton_inst = NewtonUnconstrained(neg_log_kernal, neg_log_kernel_gradient, neg_log_kernel_hessian)
+        self.newton_inst = NewtonUnconstrained(neg_log_kernel, neg_log_kernel_gradient, neg_log_kernel_hessian)
         self.newton_inst.run_newton_with_backtracking_line_search(
             starting_pt = newton_initial, 
             tolerance = tolerance, 
@@ -85,12 +129,25 @@ class DistLaplaceApprox:
             num_sample)
         return gaussian_samples
 
-
-
+    def get_laplace_approximated_MCproposal_sampler(self, seed=None): #need test
+        if seed is not None:
+            rn_generator = np.random.default_rng(seed=seed)
+        else:
+            rn_generator = np.random.default_rng()
+        def proposal_sampler(_):
+            gaussian_samples = rn_generator.multivariate_normal(
+                self.laplace_approx_mean, 
+                self.laplace_approx_covariance,
+                num_sample=1)
+            return gaussian_samples
+        return proposal_sampler
 
 if __name__ == "__main__":
-    #test (STAT204 HW8): laplace approximation for posterior with gumbel data
+    # test an integral
+    #later....(......)
+    
 
+    # # test a posterior approximation(STAT206 HW3 problem8): laplace approximation for posterior with gumbel data
     rn_generator = np.random.default_rng(seed=20220216)
 
     def gumbel2_inverse_cdf(y, param_alpha, param_beta):
@@ -102,7 +159,7 @@ if __name__ == "__main__":
         return gumbel2_smpl
         
     # generate sample
-    gumbel2_smpl_55 = gumbel2_random_number_generator(500, 6, 6) #<- true parameters
+    gumbel2_smpl_55 = gumbel2_random_number_generator(500, 5, 5) #<- true parameters
 
     # posterior kernel functions
     def unif_gumbel2_log_posterior(prior_param_vec, data):
