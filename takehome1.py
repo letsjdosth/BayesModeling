@@ -85,14 +85,14 @@ class MeaslesData:
             print(region, " | \t", mean_j, " | \t",var_j, " | \t",fiv_number_summary_j)
         #transform to produce latex table syntax
 
-pregdata_inst = MeaslesData()
+measles_data_inst = MeaslesData()
 
-# pregdata_inst.show_boxplot()
-# print(pregdata_inst.get_jth_region_y_n_data(11))
-# print(pregdata_inst.get_jth_region_sum_y_sum_n(11))
-# print(pregdata_inst.get_jth_region_proportions(1))
-# pregdata_inst.show_boxplot()
-# pregdata_inst.print_summary()
+# measles_data_inst.show_boxplot()
+# print(measles_data_inst.get_jth_region_y_n_data(11))
+# print(measles_data_inst.get_jth_region_sum_y_sum_n(11))
+# print(measles_data_inst.get_jth_region_proportions(1))
+# measles_data_inst.show_boxplot()
+# measles_data_inst.print_summary()
 
 
 class MCMC_Gibbs_TH1(MCMC_Gibbs):
@@ -121,7 +121,7 @@ class MCMC_Gibbs_TH1(MCMC_Gibbs):
             log_target_pdf_val -= (lgamma(d_odds * exp(r) / (1+exp(r))) + lgamma(d_odds / (1+exp(r))))
             return log_target_pdf_val
 
-        y_j, n_j = pregdata_inst.get_jth_region_sum_y_sum_n(j_region)
+        y_j, n_j = measles_data_inst.get_jth_region_sum_y_sum_n(j_region)
         log_target_pdf_with_d = partial(log_target_pdf, d=new_sample[-1], y_j=y_j, n_j=n_j)
         proposal_sampler_with_sigma2 = partial(proposal_sampler, sigma2=0.5)
         initial_mu_j = new_sample[j_region-1]
@@ -138,7 +138,6 @@ class MCMC_Gibbs_TH1(MCMC_Gibbs):
     def full_conditional_sampler_d(self, last_param):
         #sample: [mu_1,...,mu_J=37, d]
         new_sample = [x for x in last_param]
-
         
         def log_proposal_pdf(from_smpl, to_smpl):
             #symmetric
@@ -152,14 +151,14 @@ class MCMC_Gibbs_TH1(MCMC_Gibbs):
             q =  eval_pt[0]
             log_target_pdf_val = -q**2/(2*self.hyper_sigma2_d) 
             for j in range(1, 38):
-                y_j, n_j = pregdata_inst.get_jth_region_sum_y_sum_n(j)
+                y_j, n_j = measles_data_inst.get_jth_region_sum_y_sum_n(j)
                 log_target_pdf_val += (lgamma(exp(-q)) + lgamma(exp(-q)*mu_vec[j-1] + y_j) + lgamma(exp(-q)*(1-mu_vec[j-1]) + n_j - y_j))
                 log_target_pdf_val -= (lgamma(exp(-q)*mu_vec[j-1]) + lgamma(exp(-q)*(1-mu_vec[j-1])) + lgamma(exp(-q) + n_j))
                 
             return log_target_pdf_val
         
         log_target_pdf_with_mu_vec = partial(log_target_pdf, mu_vec=new_sample[0:-1])
-        proposal_sampler_with_sigma2 = partial(proposal_sampler, sigma2=0.04)
+        proposal_sampler_with_sigma2 = partial(proposal_sampler, sigma2=0.1) #0.04~0.1
         initial_d = new_sample[-1]
         initial_logit_d = [log(initial_d/(1-initial_d))]
         mc_mh_inst = MCMC_MH(log_target_pdf_with_mu_vec, log_proposal_pdf, proposal_sampler_with_sigma2, initial_logit_d)
@@ -198,4 +197,4 @@ if __name__=="__main__":
     diag_inst1.show_hist((2,3), random_index_list)
     diag_inst1.print_summaries(6)
 
-    pregdata_inst.show_boxplot()
+    measles_data_inst.show_boxplot()
