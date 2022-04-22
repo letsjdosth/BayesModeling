@@ -123,10 +123,11 @@ class MCMC_Gibbs_TH1(MCMC_Gibbs):
 
         y_j, n_j = pregdata_inst.get_jth_region_sum_y_sum_n(j_region)
         log_target_pdf_with_d = partial(log_target_pdf, d=new_sample[-1], y_j=y_j, n_j=n_j)
-        proposal_sampler_with_sigma2 = partial(proposal_sampler, sigma2=0.01)
-        initial_val = [new_sample[j_region-1]]
-        mc_mh_inst = MCMC_MH(log_target_pdf_with_d, log_proposal_pdf, proposal_sampler_with_sigma2, initial_val)
-        mc_mh_inst.generate_samples(3, verbose=False)
+        proposal_sampler_with_sigma2 = partial(proposal_sampler, sigma2=0.5)
+        initial_mu_j = new_sample[j_region-1]
+        initial_logit_mu_j = [log(initial_mu_j/(1-initial_mu_j))]
+        mc_mh_inst = MCMC_MH(log_target_pdf_with_d, log_proposal_pdf, proposal_sampler_with_sigma2, initial_logit_mu_j)
+        mc_mh_inst.generate_samples(2, verbose=False)
         new_logit_mu_j = mc_mh_inst.MC_sample[-1][0]
         new_mu_j = exp(new_logit_mu_j)/(1+exp(new_logit_mu_j))
         new_sample[j_region-1] = new_mu_j
@@ -158,10 +159,11 @@ class MCMC_Gibbs_TH1(MCMC_Gibbs):
             return log_target_pdf_val
         
         log_target_pdf_with_mu_vec = partial(log_target_pdf, mu_vec=new_sample[0:-1])
-        proposal_sampler_with_sigma2 = partial(proposal_sampler, sigma2=0.01)
-        initial_val = [new_sample[-1]]
-        mc_mh_inst = MCMC_MH(log_target_pdf_with_mu_vec, log_proposal_pdf, proposal_sampler_with_sigma2, initial_val)
-        mc_mh_inst.generate_samples(3, verbose=False)
+        proposal_sampler_with_sigma2 = partial(proposal_sampler, sigma2=0.04)
+        initial_d = new_sample[-1]
+        initial_logit_d = [log(initial_d/(1-initial_d))]
+        mc_mh_inst = MCMC_MH(log_target_pdf_with_mu_vec, log_proposal_pdf, proposal_sampler_with_sigma2, initial_logit_d)
+        mc_mh_inst.generate_samples(2, verbose=False)
         new_logit_d_j = mc_mh_inst.MC_sample[-1][0]
         new_d_j = exp(new_logit_d_j)/(1+exp(new_logit_d_j))
         new_sample[-1] = new_d_j
@@ -181,15 +183,19 @@ if __name__=="__main__":
     seed(20220425)
     initial1 = [0.1 for _ in range(38)]
     print(initial1)
-    gibbs_inst1 = MCMC_Gibbs_TH1(initial1, 10, 10) #vague hyperparam
-    gibbs_inst1.generate_samples(10000, print_iter_cycle=2000)
+    gibbs_inst1 = MCMC_Gibbs_TH1(initial1, 100, 100) #vague hyperparam
+    gibbs_inst1.generate_samples(50000, print_iter_cycle=5000)
     
 
     diag_inst1 = MCMC_Diag()
     diag_inst1.set_mc_sample_from_MCMC_instance(gibbs_inst1)
     diag_inst1.set_variable_names(["mu"+str(i) for i in range(1,38)]+["d"])
-    random_index_list = [1,30,32,37]
-    diag_inst1.show_traceplot((2,2), random_index_list)
-    diag_inst1.show_acf(30, (2,2), random_index_list)
+    diag_inst1.burnin(5000)
+    diag_inst1.thinning(20)
+    random_index_list = [1,2,30,31,32,37]
+    diag_inst1.show_traceplot((2,3), random_index_list)
+    diag_inst1.show_acf(30, (2,3), random_index_list)
+    diag_inst1.show_hist((2,3), random_index_list)
     diag_inst1.print_summaries(6)
 
+    pregdata_inst.show_boxplot()
