@@ -63,10 +63,10 @@ class MCMC_Gibbs(MCMC_base):
 
 class MCMC_MH(MCMC_base):
     #override
-    def __init__(self, log_target_pdf, log_proposal_pdf, proposal_sampler, initial, random_seed):
-        self.log_target_pdf = log_target_pdf #arg (from_smpl)
+    def __init__(self, log_target_pdf, log_proposal_pdf, proposal_sampler, initial, random_seed=None):
+        self.log_target_pdf = log_target_pdf #arg (smpl_pt)
         self.log_proposal_pdf = log_proposal_pdf #arg (from_smpl, to_smpl)
-        self.proposal_sampler = proposal_sampler #function with argument (smpl)
+        self.proposal_sampler = proposal_sampler #function with argument (from_smpl)
         
         self.initial = initial
         
@@ -76,7 +76,8 @@ class MCMC_MH(MCMC_base):
         self.num_accept = 0
 
         self.random_seed = random_seed
-        seed(random_seed)
+        if random_seed is not None:
+            seed(random_seed)
         
     def _log_r_calculator(self, candid, last):
         log_r = (self.log_target_pdf(candid) - self.log_proposal_pdf(from_smpl=last, to_smpl=candid) - \
@@ -85,7 +86,7 @@ class MCMC_MH(MCMC_base):
 
     def sampler(self, **kwrgs):
         last = self.MC_sample[-1]
-        candid = self.proposal_sampler(last) #기존 state 집어넣게
+        candid = self.proposal_sampler(last)
         unif_sample = uniform(0, 1)
         log_r = self._log_r_calculator(candid, last)
         # print(log(unif_sample), log_r) #for debug
@@ -98,8 +99,9 @@ class MCMC_MH(MCMC_base):
             self.num_total_iters += 1
 
     def generate_samples(self, num_samples, pid=None, verbose=True, print_iter_cycle=500):
-        super().generate_samples(num_samples, pid=None, verbose=True, print_iter_cycle=500)
-        print("acceptance rate: ", round(self.num_accept / self.num_total_iters, 4))
+        super().generate_samples(num_samples, pid=pid, verbose=verbose, print_iter_cycle=500)
+        if verbose:
+            print("acceptance rate: ", round(self.num_accept / self.num_total_iters, 4))
 
 
 class MCMC_Diag:
