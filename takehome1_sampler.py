@@ -76,23 +76,26 @@ class MeaslesData:
         plt.show()
     
     def print_summary(self, round_digit=5):
+        all_proportions = []
         print("region | \t mean | \t variance | \t five number summary")
         for j in range(1, 38):
             region = self.index_to_key[j]
-            proportions = self.data_dict[region]
+            proportions = self.proportion_dict[region]
+            all_proportions += proportions
             mean_j, var_j = (round(np.mean(proportions),round_digit), round(np.var(proportions), round_digit))
             fiv_number_summary_j = [np.min(proportions)] + list(np.quantile(proportions, [0.25, 0.5, 0.75])) + [np.max(proportions)]
-            print(region, " | \t", mean_j, " | \t",var_j, " | \t",fiv_number_summary_j)
-        #transform to produce latex table syntax
+            fiv_number_summary_j = [round(x, round_digit) for x in fiv_number_summary_j]
+            # print(region, " | \t", mean_j, " | \t",var_j, " | \t",fiv_number_summary_j)
+            print(j," & ", region, " & ", mean_j, " & ", var_j, " & ", fiv_number_summary_j, "\\\\")
+        
+        mean_total, var_total = (round(np.mean(all_proportions),round_digit), round(np.var(all_proportions),round_digit))
+        fiv_number_summary_total = [np.min(all_proportions)] + list(np.quantile(all_proportions, [0.25, 0.5, 0.75])) + [np.max(all_proportions)]
+        fiv_number_summary_total = [round(x, round_digit) for x in fiv_number_summary_total]
+        print("total & \t  & ", mean_total, " & ", var_total, " & ", fiv_number_summary_total, "\\\\")
+        print("total len: ", len(all_proportions))
 
 measles_data_inst = MeaslesData()
 
-# measles_data_inst.show_boxplot()
-# print(measles_data_inst.get_jth_region_y_n_data(11))
-# print(measles_data_inst.get_jth_region_sum_y_sum_n(11))
-# print(measles_data_inst.get_jth_region_proportions(1))
-# measles_data_inst.show_boxplot()
-# measles_data_inst.print_summary()
 
 
 # independent model
@@ -176,7 +179,7 @@ class MCMC_Gibbs_HModel_TH1(MCMC_Gibbs):
             return log_target_pdf_val
         
         log_target_pdf_with_mu_vec = partial(log_target_pdf, mu_vec=new_sample[0:-1])
-        proposal_sampler_with_sigma2 = partial(proposal_sampler, sigma2=0.1) #0.04~0.1
+        proposal_sampler_with_sigma2 = partial(proposal_sampler, sigma2=0.08) #0.04~0.1
         initial_d = new_sample[-1]
         initial_logit_d = [log(initial_d/(1-initial_d))]
         mc_mh_inst = MCMC_MH(log_target_pdf_with_mu_vec, log_proposal_pdf, proposal_sampler_with_sigma2, initial_logit_d)
@@ -223,5 +226,5 @@ if __name__=="__main__":
     initial1 = [0.1 for _ in range(38)]
     print(initial1)
     gibbs_inst1 = MCMC_Gibbs_HModel_TH1(initial1, 100, 100) #vague hyperparam
-    gibbs_inst1.generate_samples(50000, print_iter_cycle=5000)
+    gibbs_inst1.generate_samples(100000, print_iter_cycle=5000)
     gibbs_inst1.write_samples("takehome1_mu_d_samples")

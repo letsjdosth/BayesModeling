@@ -204,7 +204,7 @@ class MCMC_Diag:
             quantile_vec = [self._round_list(x, round) for x in quantile_vec]
         return quantile_vec
 
-    def print_summaries(self, round = None):
+    def print_summaries(self, round = None, latex_table_format=False):
         #name/mean/var/95%CI
         mean_vec = self.get_sample_mean(round=round)
         var_vec = self.get_sample_var(round=round)
@@ -214,10 +214,16 @@ class MCMC_Diag:
         print("param \t\t mean \t var \t 95%CI")
         if self.graphic_use_variable_name:
             for var_name, mean_val, var_val, cred95_vals in zip(self.variable_names, mean_vec, var_vec, cred95_interval_vec):
-                print(var_name, "\t\t", mean_val, "\t", var_val, "\t", cred95_vals)
+                if latex_table_format:
+                    print(var_name, "&", mean_val, "&", var_val, "&", cred95_vals, "\\\\")
+                else:
+                    print(var_name, "\t\t", mean_val, "\t", var_val, "\t", cred95_vals)
         else:
             for i, (mean_val, var_val, cred95_vals) in enumerate(zip(mean_vec, var_vec, cred95_interval_vec)):
-                print(i,"th", "\t\t", mean_val, "\t", var_val, "\t", cred95_vals)
+                if latex_table_format:
+                    print(i,"th", "& ", mean_val, "&", var_val, "&", cred95_vals, "\\\\") 
+                else:
+                    print(i,"th", "\t\t", mean_val, "\t", var_val, "\t", cred95_vals)
 
 
 

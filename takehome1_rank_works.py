@@ -45,7 +45,7 @@ class ReportRank():
         rank_grid = [i for i in range(1,38)]
         counting_on_rank_grid = self.marginal_for_jth_region(j)
         plt.bar(rank_grid, counting_on_rank_grid)
-        plt.title(str(j)+"th region")
+        plt.title("Region:"+str(j))
         plt.xlabel('Rank(1==highst)')
         plt.show()
 
@@ -53,7 +53,7 @@ class ReportRank():
         region_grid = [i for i in range(1,38)]
         counting_on_region_grid = self.marginal_for_kth_rank(k)
         plt.bar(region_grid, counting_on_region_grid)
-        plt.title(str(k)+"th rank")
+        plt.title("Rank:"+str(k))
         plt.xlabel('Region')
         plt.show()
 
