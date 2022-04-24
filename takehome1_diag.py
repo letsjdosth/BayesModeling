@@ -58,7 +58,7 @@ if __name__=="__main__":
     hmodel_diag_inst1.thinning(20)
 
     
-    ## for d and mu
+    # for d and mu
     hmodel_diag_inst1.show_traceplot((2,3), high_rank_list+[37])
     hmodel_diag_inst1.show_acf(30, (2,3), high_rank_list+[37])
     hmodel_diag_inst1.show_hist((2,3), high_rank_list)
@@ -68,6 +68,8 @@ if __name__=="__main__":
     hmodel_diag_inst1.show_hist((1,1), [37])
     
     hmodel_diag_inst1.print_summaries(4, latex_table_format=True)
+    print("len of samples:", len(hmodel_diag_inst1.MC_sample))
+    print("ESS of d:", hmodel_diag_inst1.effective_sample_size(37))
     
     ## for p
     hmodel_p_sampler_inst1 = tk1.CondSampler_HModel_TH1(hmodel_diag_inst1.MC_sample)
