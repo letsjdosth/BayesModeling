@@ -99,7 +99,7 @@ class MCMC_MH(MCMC_base):
             self.num_total_iters += 1
 
     def generate_samples(self, num_samples, pid=None, verbose=True, print_iter_cycle=500):
-        super().generate_samples(num_samples, pid=pid, verbose=verbose, print_iter_cycle=500)
+        super().generate_samples(num_samples, pid=pid, verbose=verbose, print_iter_cycle=print_iter_cycle)
         if verbose:
             print("acceptance rate: ", round(self.num_accept / self.num_total_iters, 4))
 
