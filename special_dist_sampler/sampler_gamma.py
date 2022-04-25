@@ -66,7 +66,8 @@ class Sampler_Wishart:
         # need cost
         if df <= (p_dim-1):
             raise ValueError("degrees of freedom should be > p-1")
-        if not np.allclose(V_scale, V_scale.T, rtol=1e-05, atol=1e-08):
+        if not np.allclose(V_scale, V_scale.T, rtol=1e-02, atol=1e-05):
+            print("V_scale: \n", V_scale)
             raise ValueError("V_scale should be symmetric")
         eigvals = np.linalg.eigvals(V_scale)
         if any([val<0 for val in eigvals]):
