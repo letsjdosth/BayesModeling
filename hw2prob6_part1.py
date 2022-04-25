@@ -75,25 +75,29 @@ if __name__=="__main__":
     initial = [1, 1, [1 for _ in range(10)]]
     wo_marginal_gibbs_inst1 = Gibbs_withoutMarginalize_HW2P6(initial)
     wo_marginal_gibbs_inst1.generate_samples(100000, print_iter_cycle=25000)
+    wo_marginal_alpha_beta_vec1 = [sample[:-1] for sample in wo_marginal_gibbs_inst1.MC_sample]
     wo_marginal_alpha_beta_theta0_vec1 = [sample[:-1]+[sample[2][0]] for sample in wo_marginal_gibbs_inst1.MC_sample]
     wo_marginal_theta_vec1 = [sample[-1] for sample in wo_marginal_gibbs_inst1.MC_sample]
+
+    wo_marginal_diag_alphabeta_inst1 = MCMC_Diag()
+    wo_marginal_diag_alphabeta_inst1.set_mc_samples_from_list(wo_marginal_alpha_beta_vec1)
+    wo_marginal_diag_alphabeta_inst1.set_variable_names(["alpha","beta"])
+    wo_marginal_diag_alphabeta_inst1.burnin(5000)
+    wo_marginal_diag_alphabeta_inst1.thinning(10)
+    wo_marginal_diag_alphabeta_inst1.show_traceplot((1,2), [0,1])
+    wo_marginal_diag_alphabeta_inst1.show_acf(30, (1,2), [0,1])
+    wo_marginal_diag_alphabeta_inst1.show_hist((1,2), [0,1])
+    wo_marginal_diag_alphabeta_inst1.print_summaries(5)
 
     wo_marginal_diag_alphabetatheta1_inst1 = MCMC_Diag()
     wo_marginal_diag_alphabetatheta1_inst1.set_mc_samples_from_list(wo_marginal_alpha_beta_theta0_vec1)
     wo_marginal_diag_alphabetatheta1_inst1.set_variable_names(["alpha","beta", "theta1"])
     wo_marginal_diag_alphabetatheta1_inst1.burnin(5000)
     wo_marginal_diag_alphabetatheta1_inst1.thinning(10)
-    wo_marginal_diag_alphabetatheta1_inst1.show_traceplot((1,2), [0,1])
-    wo_marginal_diag_alphabetatheta1_inst1.show_acf(30, (1,2), [0,1])
-    wo_marginal_diag_alphabetatheta1_inst1.show_hist((1,2), [0,1])
-    wo_marginal_diag_alphabetatheta1_inst1.print_summaries(5)
-
     wo_marginal_diag_alphabetatheta1_inst1.show_scatterplot(0,1)
     wo_marginal_diag_alphabetatheta1_inst1.show_scatterplot(2,0)
     wo_marginal_diag_alphabetatheta1_inst1.show_scatterplot(2,1)
     
-
-
     wo_marginal_diag_thetas_inst1 = MCMC_Diag()
     wo_marginal_diag_thetas_inst1.set_mc_samples_from_list(wo_marginal_theta_vec1)
     wo_marginal_diag_thetas_inst1.set_variable_names(["theta"+str(i) for i in range(1,11)])
