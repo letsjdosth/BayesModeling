@@ -175,7 +175,7 @@ if __name__=="__main__":
     #index   0     1        2     3        4            5
     #sample [mu_u, Sigma_u, mu_v, Sigma_v, [u1,...,un], [v1,...,vp]]
 
-    k = 10
+    k = 8
     initial2 = [np.array([0 for _ in range(k)]), np.identity(k), np.array([0 for _ in range(k)]), np.identity(k),
                 [np.array([0 for _ in range(k)]) for _ in range(data_inst.n)], [np.array([0 for _ in range(k)]) for _ in range(data_inst.p)]]
     gibbs_inst2 = Gibbs_HW5P6(initial2, hyper_k0 = 1, MovieRating_Data_inst = data_inst)
@@ -203,6 +203,10 @@ if __name__=="__main__":
     diag_inst22.set_variable_names(["v1_norm", "v2_norm", "v3_norm", "v4_norm"])
     diag_inst22.show_traceplot((2,2))
 
+    # u_vec_mean = np.mean(u_vec, axis=0)
+    # print(u_vec_mean.shape)
+    # print(u_vec_mean)
+    
     v_vec_mean = np.mean(v_vec, axis=0)
     print(v_vec_mean.shape)
     print(v_vec_mean)

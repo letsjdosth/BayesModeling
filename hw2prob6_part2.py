@@ -4,8 +4,9 @@ from functools import partial
 
 import numpy as np
 
-from special_dist_sampler.sampler_gamma import Sampler_univariate_Gamma
 from bayesian_tools.MCMC_Core import MCMC_MH, MCMC_Diag
+from special_dist_sampler.sampler_gamma import Sampler_univariate_Gamma
+
 
 #(t,y)
 data = [(94.3, 5), (15.7, 1), (62.9, 5), (126, 14), (5.24, 3),
@@ -49,3 +50,11 @@ if __name__=="__main__":
     diag_inst1.show_hist((1,2))
     diag_inst1.print_summaries(5)
     diag_inst1.show_scatterplot(0, 1)
+
+    gamma_sampler_inst = Sampler_univariate_Gamma()
+    alpha_beta_theta1_vec = [[sample[0], sample[1], gamma_sampler_inst.sampler(sample[0]+data[0][1], sample[1]+data[0][1])] for sample in alpha_beta_vec]
+    diag_inst2 = MCMC_Diag()
+    diag_inst2.set_mc_samples_from_list(alpha_beta_theta1_vec)
+    diag_inst2.set_variable_names(["alpha","beta","theta1"])    
+    diag_inst2.show_scatterplot(2,0)
+    diag_inst2.show_scatterplot(2,1)
