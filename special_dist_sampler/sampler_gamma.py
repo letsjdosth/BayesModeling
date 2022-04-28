@@ -1,4 +1,4 @@
-from random import seed, gammavariate
+from random import normalvariate, seed, gammavariate
 import numpy as np
 
 class GammaBase:
@@ -73,6 +73,19 @@ class Sampler_Wishart:
         if any([val<0 for val in eigvals]):
             raise ValueError("V_scale should be positive definite")
 
+    def _sampler_bartlett(self, df:int, V_Scale: np.array, p_dim):
+        chisq_sampler = Sampler_univariate_Chisq()
+        bartlett_A_mat = []
+        for i in range(p_dim):
+            bartlett_A_ith_row = [normalvariate(0,1) for _ in range(i)]
+            bartlett_A_ith_row.append(chisq_sampler.sampler_iter(1, df-i)[0]**0.5)
+            bartlett_A_ith_row += [0 for _ in range(p_dim-i)]
+            bartlett_A_mat.append(bartlett_A_ith_row)
+        bartlett_A_mat = np.array(bartlett_A_mat)
+        bartlett_L_mat = np.linalg.cholesky(V_Scale)
+        wishart_sample = bartlett_L_mat @ bartlett_A_mat @ np.transpose(bartlett_A_mat) @ np.transpose(bartlett_L_mat)
+        return wishart_sample
+
     def _sampler(self, df: int, V_scale: np.array, p_dim):
         # do not use it directly 
         # (parameter support check is too costly, so I move it to the head of 'sampler_iter()' and run it once)
@@ -82,24 +95,29 @@ class Sampler_Wishart:
             wishart_sample += (np.outer(mvn_sample, mvn_sample))
         return wishart_sample
 
-    def sampler_iter(self, sample_size: int, df: int, V_scale: np.array):
+    def sampler_iter(self, sample_size: int, df: int, V_scale: np.array, mode="outer"):
         p_dim = V_scale.shape[0]
         self._parameter_support_checker(df, V_scale, p_dim)
 
         samples = []
         for _ in range(sample_size):
-            samples.append(self._sampler(df, V_scale, p_dim))
+            if mode=="outer":
+                samples.append(self._sampler(df, V_scale, p_dim))
+            elif mode=="bartlett":
+                samples.append(self._sampler_bartlett(df, V_scale, p_dim))
+            else:
+                raise ValueError("wishart sampler: mode should be either outer or bartlett")
         return samples
 
 class Sampler_InvWishart:
     def __init__(self, set_seed=None):
         self.wishart_sampler = Sampler_Wishart(set_seed)
     
-    def sampler_iter(self, sample_size: int, df:int, G_scale: np.array):
+    def sampler_iter(self, sample_size: int, df:int, G_scale: np.array, mode="outer"):
         # X ~ Wishart(df,V) <=> 1/X ~inv.wishart(df,V^(-1)=G)
         # caution: inefficient (hmm.. how can I improve it?)
         V_scale = np.linalg.inv(G_scale)
-        wishart_samples = self.wishart_sampler.sampler_iter(sample_size, df, V_scale)
+        wishart_samples = self.wishart_sampler.sampler_iter(sample_size, df, V_scale, mode)
         return [np.linalg.inv(wishart_sample) for wishart_sample in wishart_samples]
 
 class Sampler_multivariate_InvGamma:
@@ -108,7 +126,7 @@ class Sampler_multivariate_InvGamma:
     
     def sampler_iter(self, sample_size: int, df:int, G_scale: np.array):
         # X~inv-gamma(w,G) <=> X~inv-wishart(2w, (1/w)G)
-        return self.invwishart_sampler(sample_size, 2*df, G_scale*(1/df))
+        return self.invwishart_sampler.sampler_iter(sample_size, 2*df, G_scale*(1/df))
 
 
 if __name__=="__main__":

@@ -45,7 +45,7 @@ class Gibbs_HW5P6(MCMC_Gibbs):
         #index   0     1        2     3        4            5
         #sample [mu_u, Sigma_u, mu_v, Sigma_v, [u1,...,un], [v1,...,vp]]
         mvn_cov = new_sample[1]/(self.data_inst.n + self.hyper_k0)
-        mvn_mean = np.matmul(mvn_cov, np.sum(new_sample[4], axis=0))
+        mvn_mean = np.sum(new_sample[4], axis=0)/(self.data_inst.n + self.hyper_k0)
         new_mu_u = self.random_generator.multivariate_normal(mvn_mean, mvn_cov)
         new_sample[0] = new_mu_u
         return new_sample
@@ -59,7 +59,7 @@ class Gibbs_HW5P6(MCMC_Gibbs):
         for u_i in new_sample[4]:
             inv_wishart_scale += np.outer(u_i - new_sample[0], u_i - new_sample[0])
         inv_wishart_scale += (np.outer(new_sample[0], new_sample[0])*self.hyper_k0)
-        new_Sigma_u = self.inv_wishart_generator.sampler_iter(1, inv_wishart_df, inv_wishart_scale)[0]
+        new_Sigma_u = self.inv_wishart_generator.sampler_iter(1, inv_wishart_df, inv_wishart_scale, mode="bartlett")[0]
         new_sample[1] = new_Sigma_u
         return new_sample
 
@@ -68,7 +68,7 @@ class Gibbs_HW5P6(MCMC_Gibbs):
         #index   0     1        2     3        4            5
         #sample [mu_u, Sigma_u, mu_v, Sigma_v, [u1,...,un], [v1,...,vp]]
         mvn_cov = new_sample[3]/(self.data_inst.p + self.hyper_k0)
-        mvn_mean = np.matmul(mvn_cov, np.sum(new_sample[5], axis=0))
+        mvn_mean = np.sum(new_sample[5], axis=0)/(self.data_inst.p + self.hyper_k0)
         new_mu_v = self.random_generator.multivariate_normal(mvn_mean, mvn_cov)
         new_sample[2] = new_mu_v
         return new_sample
@@ -82,7 +82,7 @@ class Gibbs_HW5P6(MCMC_Gibbs):
         for v_i in new_sample[5]:
             inv_wishart_scale += np.outer(v_i - new_sample[2], v_i - new_sample[2])
         inv_wishart_scale += (np.outer(new_sample[2], new_sample[2])*self.hyper_k0)
-        new_Sigma_v = self.inv_wishart_generator.sampler_iter(1, inv_wishart_df, inv_wishart_scale)[0]
+        new_Sigma_v = self.inv_wishart_generator.sampler_iter(1, inv_wishart_df, inv_wishart_scale, mode="bartlett")[0]
         new_sample[3] = new_Sigma_v
         return new_sample
 
@@ -151,40 +151,16 @@ if __name__=="__main__":
     #index   0     1        2     3        4            5
     #sample [mu_u, Sigma_u, mu_v, Sigma_v, [u1,...,un], [v1,...,vp]]
 
-    # k = 1
-    # initial1 = [np.array([0 for _ in range(k)]), np.identity(k), np.array([0 for _ in range(k)]), np.identity(k),
-    #             [np.array([0 for _ in range(k)]) for _ in range(data_inst.n)], [np.array([0 for _ in range(k)]) for _ in range(data_inst.p)]]
-    # gibbs_inst1 = Gibbs_HW5P6(initial1, hyper_k0 = 1, MovieRating_Data_inst = data_inst)
-    # gibbs_inst1.generate_samples(5000)
-    # diag_inst11 = MCMC_Diag()
-    # diag_inst11.set_mc_samples_from_list([[sample[0], np.linalg.det(sample[1]), sample[2], np.linalg.det(sample[3])] for sample in gibbs_inst1.MC_sample])
-    # diag_inst11.set_variable_names(["mu_u", "det(Sigma_u)", "mu_v", "det(Sigma_v)"])
-    # diag_inst11.show_traceplot((2,2))
-    # diag_inst12 = MCMC_Diag()
-    # diag_inst12.set_mc_samples_from_list([sample[4] for sample in gibbs_inst1.MC_sample])
-    # diag_inst12.set_variable_names(["u"+str(i+1) for i in range(data_inst.n)])
-    # diag_inst12.show_traceplot((2,2), [0,1,2,3])
-    # diag_inst13 = MCMC_Diag()
-    # diag_inst13.set_mc_samples_from_list([sample[5] for sample in gibbs_inst1.MC_sample])
-    # diag_inst13.set_variable_names(["v"+str(j+1) for j in range(data_inst.p)])
-    # diag_inst13.show_traceplot((2,2), [0,1,2,3])
-    
-
-
-
-    #index   0     1        2     3        4            5
-    #sample [mu_u, Sigma_u, mu_v, Sigma_v, [u1,...,un], [v1,...,vp]]
-
-    k = 8
+    k = 4
     initial2 = [np.array([0 for _ in range(k)]), np.identity(k), np.array([0 for _ in range(k)]), np.identity(k),
                 [np.array([0 for _ in range(k)]) for _ in range(data_inst.n)], [np.array([0 for _ in range(k)]) for _ in range(data_inst.p)]]
-    gibbs_inst2 = Gibbs_HW5P6(initial2, hyper_k0 = 1, MovieRating_Data_inst = data_inst)
-    gibbs_inst2.generate_samples(3000)
+    gibbs_inst2 = Gibbs_HW5P6(initial2, hyper_k0 = 0.01, MovieRating_Data_inst = data_inst)
+    gibbs_inst2.generate_samples(20000)
     gibbs_inst2.MC_sample = gibbs_inst2.MC_sample[500:] #burn-in
 
     diag_inst21 = MCMC_Diag()
     diag_inst21.set_mc_samples_from_list([[np.linalg.norm(sample[0]), np.linalg.det(sample[1]), np.linalg.norm(sample[2]), np.linalg.det(sample[3])] for sample in gibbs_inst2.MC_sample])
-    diag_inst21.set_variable_names(["mu_u", "det(Sigma_u)", "mu_v", "det(Sigma_v)"])
+    diag_inst21.set_variable_names(["mu_u_norm", "det(Sigma_u)", "mu_v_norm", "det(Sigma_v)"])
     diag_inst21.show_traceplot((2,2))
 
     u_vec = [sample[4] for sample in gibbs_inst2.MC_sample]
@@ -203,11 +179,15 @@ if __name__=="__main__":
     diag_inst22.set_variable_names(["v1_norm", "v2_norm", "v3_norm", "v4_norm"])
     diag_inst22.show_traceplot((2,2))
 
-    # u_vec_mean = np.mean(u_vec, axis=0)
-    # print(u_vec_mean.shape)
-    # print(u_vec_mean)
+    u_vec_mean = np.mean(u_vec, axis=0)
+    # print(u_vec_mean.shape) #100,K
+    # print(u_vec_mean) 
     
     v_vec_mean = np.mean(v_vec, axis=0)
-    print(v_vec_mean.shape)
-    print(v_vec_mean)
+    # print(v_vec_mean.shape) #30, k
+    # print(v_vec_mean)
     
+    #uv
+    uv_cal_by_mean = u_vec_mean @ np.transpose(v_vec_mean)
+    for i in range(100):
+        print(uv_cal_by_mean[i,])
