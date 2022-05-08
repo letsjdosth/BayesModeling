@@ -84,7 +84,7 @@ class MCMC_MH(MCMC_base):
              self.log_target_pdf(last) + self.log_proposal_pdf(from_smpl=candid, to_smpl=last))
         return log_r
 
-    def sampler(self, **kwrgs):
+    def sampler(self, **kwargs):
         last = self.MC_sample[-1]
         candid = self.proposal_sampler(last)
         unif_sample = uniform(0, 1)
