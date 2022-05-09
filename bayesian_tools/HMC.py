@@ -114,9 +114,12 @@ if __name__ == "__main__":
     print(now_log_target(np.array([0,0])))
     print(now_log_target_gradient(np.array([0,0])))
 
-    hmc_inst = MC_Hamiltonian(now_log_target, now_log_target_gradient, [1, 1], 7, 0.1, np.array([0,0]), 20220508)
+    hmc_inst = MC_Hamiltonian(now_log_target, now_log_target_gradient, [1, 1], 10, 0.1, np.array([0,0]), 20220508)
     hmc_inst.generate_samples(10000)
     
     diag_inst = MCMC_Diag()
     diag_inst.set_mc_sample_from_MCMC_instance(hmc_inst)
+    diag_inst.burnin(1000)
     diag_inst.show_scatterplot(0,1)
+    diag_inst.show_traceplot((1,2))
+    diag_inst.show_acf(30,(1,2))

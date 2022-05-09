@@ -297,7 +297,7 @@ class MCMC_Diag:
     def get_autocorr(self, dim_idx, maxLag):
         y = self.get_specific_dim_samples(dim_idx)
         acf = []
-        y_mean = mean(y)
+        y_mean = np.mean(y)
         y = [elem - y_mean  for elem in y]
         n_var = sum([elem**2 for elem in y])
         for k in range(maxLag+1):
