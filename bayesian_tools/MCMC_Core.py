@@ -366,22 +366,6 @@ class MCMC_Diag:
         ess = n / (1 + 2*sum(auto_corr))
         return ess
 
-    def DIC(self, log_likelihood_func_given_data, pt_estimate_method = "mean"): 
-        # Caution: need to test. this function is not tested
-
-        pt_est = None
-        if pt_estimate_method == "mean":
-            pt_est = self.get_sample_mean()
-        else:
-            raise ValueError("only mean pt_estimate_method is implemented now :D")
-        
-        def deviance_D(param_vec):
-            return log_likelihood_func_given_data(param_vec) * (-2)
-        deviance_at_pt_est = deviance_D(pt_est)
-        deviances_at_all_samples = [deviance_D(x) for x in self.MC_sample]
-        expected_deviance = mean(deviances_at_all_samples)
-        return expected_deviance * 2 - deviance_at_pt_est
-
 
 
 if __name__ == "__main__":
