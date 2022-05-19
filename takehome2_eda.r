@@ -1,7 +1,11 @@
 covid_data = read.csv("dataset/covid.csv")
 head(covid_data)
 
+library(corrplot)
 covid_data_numeric = covid_data[-c(1,2)]
+corrplot(cor(covid_data_numeric), method="circle")
+
+
 colnames(covid_data)
 #indicator
 "continent"
@@ -87,6 +91,11 @@ plot(total_cases_per_million ~ gdp_per_capita, data = covid_data)
 #a long and healthy life, knowledge and a decent standard of living. Values for 2019
 plot(total_cases_per_million ~ human_development_index, data = covid_data)
 
+"life_expectancy"
+#Life expectancy at birth in 2019
+plot(total_cases_per_million ~ life_expectancy, data = covid_data)
+
+
 plot(gdp_per_capita ~ human_development_index, data = covid_data) #two are linear
 
 ##====================================================
@@ -94,10 +103,6 @@ plot(gdp_per_capita ~ human_development_index, data = covid_data) #two are linea
 "hospital_beds_per_thousand"
 #Hospital beds per 1,000 people, most recent year available since 2010
 plot(total_cases_per_million ~ hospital_beds_per_thousand, data = covid_data)
-
-"life_expectancy"
-#Life expectancy at birth in 2019
-plot(total_cases_per_million ~ life_expectancy, data = covid_data)
 
 "cardiovasc_death_rate"
 #Death rate from cardiovascular disease in 2017 (annual number of deaths per 100,000 people)
