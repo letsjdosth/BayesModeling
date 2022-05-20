@@ -46,7 +46,7 @@ factory_inst = DesignMatrixFactory()
 # print(factory_inst.make_design_matrix_with_intercept(["aged_65_older"]))
 # print(factory_inst.make_design_matrix_with_continent_indicator(["aged_65_older"]))
 
-model1_y = factory_inst.make_response_vector(normalize=True)
+model1_y = np.log(factory_inst.make_response_vector(normalize=False))
 model1_x = factory_inst.make_design_matrix_with_intercept([
     "total_vaccinations_per_hundred",
     "population_density",

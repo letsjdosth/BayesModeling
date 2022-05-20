@@ -1,6 +1,8 @@
 covid_data = read.csv("dataset/covid.csv")
 head(covid_data)
 
+covid_data["log_total_cases_per_million"] = log(covid_data["total_cases_per_million"])
+
 library(corrplot)
 covid_data_numeric = covid_data[-c(1,2)]
 corrplot(cor(covid_data_numeric), method="circle")

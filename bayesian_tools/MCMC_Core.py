@@ -178,7 +178,7 @@ class MCMC_Diag:
         mean_vec = []
         for i in range(self.num_dim):
             ith_dim_samples = self.get_specific_dim_samples(i)
-            mean_vec.append(mean(ith_dim_samples))
+            mean_vec.append(np.mean(ith_dim_samples))
         if round is not None:
             mean_vec = self._round_list(mean_vec, round)
         return mean_vec
@@ -188,7 +188,7 @@ class MCMC_Diag:
         var_vec = []
         for i in range(self.num_dim):
             ith_dim_samples = self.get_specific_dim_samples(i)
-            var_vec.append(variance(ith_dim_samples))
+            var_vec.append(np.var(ith_dim_samples))
         if round is not None:
             var_vec = self._round_list(var_vec, round)
         return var_vec
