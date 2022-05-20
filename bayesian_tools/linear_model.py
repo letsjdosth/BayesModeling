@@ -1,6 +1,9 @@
+from distutils.command import check
 from random import seed, normalvariate
+from turtle import color
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 if __name__=="__main__":
     from MCMC_Core import MCMC_base, MCMC_Gibbs
@@ -152,7 +155,66 @@ class LM_random_eff_fixed_slope_noninfo_prior(MCMC_Gibbs):
         self.MC_sample.append(new_sample)
     
 
+class Regression_Model_Checker:
+    def __init__(self, response_vec, design_mat, beta_samples, sigma2_samples):
+        self.y = response_vec
+        self.x = design_mat
+        self.beta_samples = beta_samples
+        self.sigma2_samples = sigma2_samples
 
+        self.mean_beta = np.mean(self.beta_samples, axis=0)
+        self.mean_sigma2 = np.mean(self.sigma2_samples)
+    
+        self.fitted = self.x @ self.mean_beta
+        self.residuals = self.y - self.fitted
+        self.standardized_residuals = self.residuals/(self.mean_sigma2**0.5)
+
+    def show_residual_plot(self, show=True):
+        x_axis = self.fitted
+        y_axis = self.residuals
+        plt.plot(x_axis, y_axis, 'bo')
+        plt.xlabel("y-fitted")
+        plt.ylabel("standardized residual")
+        plt.title("residual plot")
+        plt.axhline(0)
+        plt.axhline(1.96, linestyle='dashed')
+        plt.axhline(-1.96, linestyle='dashed')
+        if show:
+            plt.show()
+
+    def show_residual_normalProbplot(self, show=True):
+        from scipy.stats import probplot
+        probplot(self.residuals, plot=plt)
+        plt.xlabel("theoretical quantiles")
+        plt.ylabel("observed values")
+        plt.title("normal probability plot")
+
+        if show:
+            plt.show()
+
+    def show_posterior_predictive_at_new_point(self, design_row, reference_response_val=None, show=True, color=None):
+        predicted = []
+        for beta, sigma2 in zip(self.beta_samples, self.sigma2_samples):
+            new_y = (design_row @ beta) + normalvariate(0, sigma2**0.5)
+            predicted.append(new_y)
+        
+        if color is None:
+            plt.hist(predicted, bins=50, density=True, histtype="step")
+            if reference_response_val is not None:
+                plt.axvline(reference_response_val)
+        else:
+            desig_color = "C"+str(color%10)
+            plt.hist(predicted, bins=50, density=True, histtype="step", color=desig_color)
+            if reference_response_val is not None:
+                plt.axvline(reference_response_val, color=desig_color)
+        plt.xlabel("predicted at:"+str(design_row))
+        if show:
+            plt.show()        
+
+    def show_posterior_predictive_at_given_data_point(self, data_idx, show=True):
+        design_row = self.x[data_idx,:]
+        ref_y = self.y[data_idx]
+        self.show_posterior_predictive_at_new_point(design_row, ref_y, show, color=data_idx)
 
 
 if __name__=="__main__":
@@ -214,7 +276,7 @@ if __name__=="__main__":
     # [[beta], sigma2, mu0, tau2_0]
     test2_initial = [np.array([0,0,0,0,0,0]),1, 0, 1]
     lm_inst2 = LM_random_eff_fixed_slope_noninfo_prior(test2_y, test2_x, test2_indicator, test2_initial, 20220519)
-    lm_inst2.generate_samples(30000, print_iter_cycle=10000)
+    lm_inst2.generate_samples(10000, print_iter_cycle=5000)
     
     
     from MCMC_Core import MCMC_Diag
@@ -223,13 +285,20 @@ if __name__=="__main__":
     diag_inst21.set_mc_samples_from_list(betas2)
     diag_inst21.set_variable_names(["beta0", "beta1", "beta2", "beta3", "beta4", "beta5"])
     diag_inst21.print_summaries(round=8)
-    diag_inst21.show_hist((1,6))
-    diag_inst21.show_traceplot((1,6))
+    # diag_inst21.show_hist((1,6))
+    # diag_inst21.show_traceplot((1,6))
 
     diag_inst22 = MCMC_Diag()
     others2 = [x[1:4] for x in lm_inst2.MC_sample]
     diag_inst22.set_mc_samples_from_list(others2)
     diag_inst22.set_variable_names(["sigma2", "mu0", "tau2_0"])
     diag_inst22.print_summaries(round=8)
-    diag_inst22.show_hist((1,3))
-    diag_inst22.show_traceplot((1,3))
+    # diag_inst22.show_hist((1,3))
+    # diag_inst22.show_traceplot((1,3))
+
+
+    checker_inst2 = Regression_Model_Checker(test2_y, test2_x, betas2, diag_inst22.get_specific_dim_samples(0))
+    checker_inst2.show_residual_plot()
+    checker_inst2.show_residual_normalProbplot()
+    checker_inst2.show_posterior_predictive_at_new_point([0,0,0,1,1,1], reference_response_val=2.5)
+    checker_inst2.show_posterior_predictive_at_given_data_point(0)

@@ -51,7 +51,7 @@ class InfomationCriteria:
         deviance_at_pt_est = self._dic_deviance_D(pt_est)
         log_likelihood_vec = [self._dic_log_likelihood_given_full_data(x) for x in self.MC_sample]
         p_alt = 2*np.var(log_likelihood_vec)
-        return deviance_at_pt_est + p_alt
+        return deviance_at_pt_est + 2*p_alt
 
 
     def WAIC(self, pt_estimate_method = "mean"):
