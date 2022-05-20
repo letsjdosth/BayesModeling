@@ -7,8 +7,10 @@ import matplotlib.pyplot as plt
 
 if __name__=="__main__":
     from MCMC_Core import MCMC_base, MCMC_Gibbs
+    from info_criteria import InfomationCriteria
     from sampler_gamma import Sampler_univariate_InvChisq, Sampler_univariate_InvGamma
 else:
+    from bayesian_tools.info_criteria import InfomationCriteria
     from bayesian_tools.MCMC_Core import MCMC_base, MCMC_Gibbs
     from bayesian_tools.sampler_gamma import Sampler_univariate_InvChisq, Sampler_univariate_InvGamma
 
@@ -155,6 +157,32 @@ class LM_random_eff_fixed_slope_noninfo_prior(MCMC_Gibbs):
         self.MC_sample.append(new_sample)
     
 
+
+class InfomationCriteria_for_LM(InfomationCriteria):
+    def __init__(self, response_vec, design_matrix, beta_samples, sigma2_samples):
+        self.beta_samples = beta_samples
+        self.sigma2_samples = sigma2_samples
+        self.y = response_vec
+        self.x = design_matrix
+        self.data = [(y,x) for y, x in zip(self.y, self.x)]
+        self.MC_sample = np.array([(s,b) for s, b in zip(self.sigma2_samples, self.beta_samples)], dtype=object)
+
+    def _dic_log_likelihood_given_full_data(self, param_vec):
+        sigma2 = param_vec[0]
+        beta = param_vec[1]
+        n = len(self.x)
+        residual = self.y-(self.x@beta)
+        exponent = np.dot(residual, residual) / (-2*sigma2)
+        return (-n/2)*np.log(sigma2) + exponent
+    
+    def _waic_regular_likelihood_given_one_data_pt(self, param_vec, data_point_vec):
+        sigma2 = param_vec[0]
+        beta = param_vec[1]
+        y, x = data_point_vec
+        residual = y-(x@beta)
+        exponent = np.dot(residual, residual) / (-2*sigma2)
+        return sigma2**(-1/2) * np.exp(exponent)
+
 class Regression_Model_Checker:
     def __init__(self, response_vec, design_mat, beta_samples, sigma2_samples):
         self.y = response_vec
@@ -215,6 +243,10 @@ class Regression_Model_Checker:
         design_row = self.x[data_idx,:]
         ref_y = self.y[data_idx]
         self.show_posterior_predictive_at_new_point(design_row, ref_y, show, color=data_idx)
+
+
+
+
 
 
 if __name__=="__main__":

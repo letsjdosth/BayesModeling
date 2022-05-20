@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from bayesian_tools.linear_model import LM_noninfo_prior, LM_random_eff_fixed_slope_noninfo_prior, Regression_Model_Checker
+from bayesian_tools.linear_model import LM_noninfo_prior, LM_random_eff_fixed_slope_noninfo_prior, Regression_Model_Checker, InfomationCriteria_for_LM
 from bayesian_tools.MCMC_Core import MCMC_Diag
 from bayesian_tools.info_criteria import InfomationCriteria
 
@@ -45,11 +45,6 @@ class DesignMatrixFactory:
         return np.array(self.covid_data_coded_continent[variable_list])
 
 factory_inst = DesignMatrixFactory()
-# print(factory_inst.make_design_matrix_with_intercept(["aged_65_older"]))
-# print(factory_inst.make_design_matrix_with_continent_indicator(["aged_65_older"]))
-
-
-### model1: without continent ###
 selected_variables = [
     "total_vaccinations_per_hundred",
     "population_density",
@@ -60,6 +55,9 @@ selected_variables = [
     # "diabetes_prevalence",
     "male_smokers"
     ]
+
+### model1: without continent ###
+
 model1_y = np.log(factory_inst.make_response_vector(normalize=False))
 model1_x = factory_inst.make_design_matrix_with_intercept(selected_variables)
 
@@ -72,9 +70,9 @@ diag_inst1.set_variable_names(["sigma2"]+["beta"+str(i) for i in range(model1_x.
 diag_inst1.print_summaries(round=8)
 lm_inst1.print_freqentist_result()
 
-diag_inst1.show_hist((1,1), [0])
-diag_inst1.show_hist((2,3), [1,2,3,4,5,6])
-diag_inst1.show_scatterplot(1,2)
+# diag_inst1.show_hist((1,1), [0])
+# diag_inst1.show_hist((2,3), [1,2,3,4,5,6])
+# diag_inst1.show_scatterplot(1,2)
 
 beta_samples1 = [np.array(x[1:]) for x in diag_inst1.MC_sample]
 sigma2_samples1 = diag_inst1.get_specific_dim_samples(0)
@@ -85,31 +83,7 @@ for i in range(5):
     checker_inst1.show_posterior_predictive_at_given_data_point(i, show=False)
 plt.show()
 
-class InfomationCriteria_model1(InfomationCriteria):
-    def __init__(self, MC_sample, response_vec, design_matrix):
-        self.MC_sample = np.array(MC_sample)
-        self.num_dim = len(MC_sample[0])
-        self.y = response_vec
-        self.x = design_matrix
-        self.data = [(y,x) for y, x in zip(self.y, self.x)]
-
-    def _dic_log_likelihood_given_full_data(self, param_vec):
-        sigma2 = param_vec[0]
-        beta = np.array(param_vec[1:])
-        n = self.x.shape[0]
-        residual = self.y-(self.x@beta)
-        exponent = np.dot(residual, residual) / (-2*sigma2)
-        return (-n/2)*np.log(sigma2) + exponent
-    
-    def _waic_regular_likelihood_given_one_data_pt(self, param_vec, data_point_vec):
-        sigma2 = param_vec[0]
-        beta = np.array(param_vec[1:])
-        y, x = data_point_vec
-        residual = y-(x@beta)
-        exponent = np.dot(residual, residual) / (-2*sigma2)
-        return sigma2**(-1/2) * np.exp(exponent)
-  
-IC_inst1 = InfomationCriteria_model1(diag_inst1.MC_sample, model1_y, model1_x)
+IC_inst1 = InfomationCriteria_for_LM(model1_y, model1_x, beta_samples1, sigma2_samples1)
 print("DIC:", IC_inst1.DIC())
 print("DIC_alt:", IC_inst1.DIC_alt())
 print("WAIC:", IC_inst1.WAIC())
@@ -157,7 +131,7 @@ checker_inst1_cv2.show_posterior_predictive_at_new_point(model1_testing_sl_x, mo
 
 
 
-### model2: with continent, random-slope model ###
+### model2: with continent, random-intercept model ###
 
 model2_y = np.log(factory_inst.make_response_vector(normalize=False))
 model2_x = factory_inst.make_design_matrix_with_continent_indicator(selected_variables)
@@ -176,12 +150,12 @@ diag_inst21.set_mc_samples_from_list(beta_samples2)
 diag_inst21.set_variable_names(["beta"+str(i) for i in range(model2_param_dim)])
 diag_inst21.burnin(3000)
 diag_inst21.print_summaries(round=8)
-diag_inst21.show_hist((3,5))
-diag_inst21.show_traceplot((3,5))
-diag_inst21.show_scatterplot(0,1)
-diag_inst21.show_scatterplot(0,6)
-diag_inst21.show_scatterplot(1,7)
-diag_inst21.show_scatterplot(2,8)
+# diag_inst21.show_hist((3,5))
+# diag_inst21.show_traceplot((3,5))
+# diag_inst21.show_scatterplot(0,1)
+# diag_inst21.show_scatterplot(0,6)
+# diag_inst21.show_scatterplot(1,7)
+# diag_inst21.show_scatterplot(2,8)
 
 diag_inst22 = MCMC_Diag()
 others2 = [x[1:4] for x in lm_randeff_inst2.MC_sample]
@@ -194,6 +168,7 @@ diag_inst22.show_traceplot((1,3))
 diag_inst22.show_scatterplot(1,2)
 
 
+beta_samples2 = diag_inst21.MC_sample
 sigma2_samples2 = diag_inst22.get_specific_dim_samples(0)
 checker_inst2 = Regression_Model_Checker(model2_y, model2_x, beta_samples2, sigma2_samples2)
 checker_inst2.show_residual_plot()
@@ -202,39 +177,11 @@ for i in range(5):
     checker_inst2.show_posterior_predictive_at_given_data_point(i, show=False)
 plt.show()
 
-class InfomationCriteria_model2(InfomationCriteria):
-    #param
-    #  0       1       2    3
-    # [[beta], sigma2, mu0, tau2_0]
-    def __init__(self, MC_sample, response_vec, design_matrix):
-        self.MC_sample = np.array(MC_sample, dtype=object)
-        self.num_dim = len(MC_sample[0])
-        self.y = response_vec
-        self.x = design_matrix
-        self.data = [(y,x) for y, x in zip(self.y, self.x)]
-
-    def _dic_log_likelihood_given_full_data(self, param_vec):
-        sigma2 = param_vec[1]
-        beta = param_vec[0]
-        n = self.x.shape[0]
-        residual = self.y-(self.x@beta)
-        exponent = np.dot(residual, residual) / (-2*sigma2)
-        return (-n/2)*np.log(sigma2) + exponent
-    
-    def _waic_regular_likelihood_given_one_data_pt(self, param_vec, data_point_vec):
-        sigma2 = param_vec[1]
-        beta = param_vec[0]
-        y, x = data_point_vec
-        residual = y-(x@beta)
-        exponent = np.dot(residual, residual) / (-2*sigma2)
-        return sigma2**(-1/2) * np.exp(exponent)
-  
-IC_inst2 = InfomationCriteria_model2(lm_randeff_inst2.MC_sample[3000:], model2_y, model2_x)
+IC_inst2 = InfomationCriteria_for_LM(model2_y, model2_x, beta_samples2, sigma2_samples2)
 print("DIC:", IC_inst2.DIC())
 print("DIC_alt:", IC_inst2.DIC_alt())
 print("WAIC:", IC_inst2.WAIC())
 print("WAIC_alt:", IC_inst2.WAIC_alt())
-
 
 
 ## cv
@@ -294,12 +241,6 @@ checker_inst2_cv2 = Regression_Model_Checker(model2_training_without_sl_y, model
 checker_inst2_cv2.show_posterior_predictive_at_new_point(model2_testing_sl_x, model2_testing_sl_y)
 
 
-
-
-
-
-
-
 # ### model3: with continent, fixed effect model ###
 
 lm_fixeff_inst3 = LM_noninfo_prior(model2_y, model2_x, 20220519)
@@ -319,38 +260,11 @@ for i in range(5):
     checker_inst2.show_posterior_predictive_at_given_data_point(i, show=False)
 plt.show()
 
-
-class InfomationCriteria_model3(InfomationCriteria):
-    def __init__(self, MC_sample, response_vec, design_matrix):
-        self.MC_sample = np.array(MC_sample, dtype=object)
-        self.num_dim = len(MC_sample[0])
-        self.y = response_vec
-        self.x = design_matrix
-        self.data = [(y,x) for y, x in zip(self.y, self.x)]
-
-    def _dic_log_likelihood_given_full_data(self, param_vec):
-        sigma2 = param_vec[0]
-        beta = np.array(param_vec[1:])
-        n = self.x.shape[0]
-        residual = self.y-(self.x@beta)
-        exponent = np.dot(residual, residual) / (-2*sigma2)
-        return (-n/2)*np.log(sigma2) + exponent
-    
-    def _waic_regular_likelihood_given_one_data_pt(self, param_vec, data_point_vec):
-        sigma2 = param_vec[0]
-        beta = np.array(param_vec[1:])
-        y, x = data_point_vec
-        residual = y-(x@beta)
-        exponent = np.dot(residual, residual) / (-2*sigma2)
-        return sigma2**(-1/2) * np.exp(exponent)
-  
-
-IC_inst3 = InfomationCriteria_model3(lm_fixeff_inst3.MC_sample[3000:], model2_y, model2_x)
+IC_inst3 = InfomationCriteria_for_LM(model2_y, model2_x, beta_samples3, sigma2_samples3)
 print("DIC:", IC_inst3.DIC())
 print("DIC_alt:", IC_inst3.DIC_alt())
 print("WAIC:", IC_inst3.WAIC())
 print("WAIC_alt:", IC_inst3.WAIC_alt())
-
 
 
 ## cv
@@ -393,5 +307,3 @@ beta_samples3_cv2 = [np.array(x[1:]) for x in diag_inst3_cv2.MC_sample]
 sigma2_samples3_cv2 = diag_inst3_cv2.get_specific_dim_samples(0)
 checker_inst3_cv2 = Regression_Model_Checker(model3_training_without_sl_y, model3_training_without_sl_x, beta_samples3_cv2, sigma2_samples3_cv2)
 checker_inst3_cv2.show_posterior_predictive_at_new_point(model3_testing_sl_x, model3_testing_sl_y)
-
-
