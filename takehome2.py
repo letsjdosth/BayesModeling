@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from bayesian_tools.linear_model import LM_noninfo_prior
+from bayesian_tools.linear_model import LM_noninfo_prior, LM_random_eff_fixed_slope_noninfo_prior
 from bayesian_tools.MCMC_Core import MCMC_Diag
 
 class DesignMatrixFactory:
@@ -38,7 +38,7 @@ class DesignMatrixFactory:
         return np.array(self.covid_data[variable_list])
 
     def make_design_matrix_with_continent_indicator(self, variable_list):
-        #no intercept!
+        #no intercept! first five are indicator variables for 'continent'
         variable_list = ['continent_Africa', 'continent_Asia', 'continent_Europe', 'continent_North America', 'continent_South America'] + variable_list
         return np.array(self.covid_data_coded_continent[variable_list])
 
@@ -57,18 +57,71 @@ model1_x = factory_inst.make_design_matrix_with_intercept([
     "diabetes_prevalence",
     "male_smokers"
     ])
-print(model1_y)
-print(model1_x)
+# print(model1_y)
+# print(model1_x)
 
-lm_inst1 = LM_noninfo_prior(model1_y, model1_x, 20220519)
-lm_inst1.generate_samples(10000, print_iter_cycle=2500)
+# lm_inst1 = LM_noninfo_prior(model1_y, model1_x, 20220519)
+# lm_inst1.generate_samples(10000, print_iter_cycle=2500)
 
-diag_inst = MCMC_Diag()
-diag_inst.set_mc_sample_from_MCMC_instance(lm_inst1)
-diag_inst.set_variable_names(["sigma2"]+["beta"+str(i) for i in range(9)])
-diag_inst.print_summaries(round=8)
-lm_inst1.print_freqentist_result()
+# diag_inst = MCMC_Diag()
+# diag_inst.set_mc_sample_from_MCMC_instance(lm_inst1)
+# diag_inst.set_variable_names(["sigma2"]+["beta"+str(i) for i in range(9)])
+# diag_inst.print_summaries(round=8)
+# lm_inst1.print_freqentist_result()
 
 # diag_inst.show_hist((1,1), [0])
 # diag_inst.show_hist((2,3), [1,2,3,4,5,6])
 # diag_inst.show_scatterplot(1,2)
+
+model2_y = np.log(factory_inst.make_response_vector(normalize=False))
+model2_x = factory_inst.make_design_matrix_with_continent_indicator([
+    "total_vaccinations_per_hundred",
+    "population_density",
+    "aged_65_older",
+    "gdp_per_capita",
+    "hospital_beds_per_thousand",
+    "cardiovasc_death_rate",
+    "diabetes_prevalence",
+    "male_smokers"
+    ])
+model2_param_dim = model2_x.shape[1]
+
+rnd_eff_indicator = [1 for _ in range(5)]+[0 for _ in range(model2_param_dim-5)]
+model2_initial = [[11 for _ in range(5)]+[0 for _ in range(model2_param_dim-5)], 1, 11, 1]
+#  0       1       2    3
+# [[beta], sigma2, mu0, tau2_0]
+lm_randeff_inst2 = LM_random_eff_fixed_slope_noninfo_prior(model2_y, model2_x, rnd_eff_indicator, model2_initial, 20220519)
+lm_randeff_inst2.generate_samples(10000)
+
+diag_inst21 = MCMC_Diag()
+betas2 = [x[0] for x in lm_randeff_inst2.MC_sample]
+diag_inst21.set_mc_samples_from_list(betas2)
+diag_inst21.set_variable_names(["beta"+str(i) for i in range(model2_param_dim)])
+diag_inst21.burnin(3000)
+diag_inst21.print_summaries(round=8)
+diag_inst21.show_hist((3,5))
+diag_inst21.show_traceplot((3,5))
+diag_inst21.show_scatterplot(0,1)
+diag_inst21.show_scatterplot(0,6)
+diag_inst21.show_scatterplot(1,7)
+diag_inst21.show_scatterplot(2,8)
+
+diag_inst22 = MCMC_Diag()
+others2 = [x[1:4] for x in lm_randeff_inst2.MC_sample]
+diag_inst22.set_mc_samples_from_list(others2)
+diag_inst22.set_variable_names(["sigma2", "mu0", "tau2_0"])
+diag_inst22.burnin(3000)
+diag_inst22.print_summaries(round=8)
+diag_inst22.show_hist((1,3))
+diag_inst22.show_traceplot((1,3))
+diag_inst22.show_scatterplot(1,2)
+
+
+# lm_fixeff_inst3 = LM_noninfo_prior(model2_y, model2_x, 20220519)
+# lm_fixeff_inst3.generate_samples(10000, print_iter_cycle=2500)
+# diag_inst3 = MCMC_Diag()
+# diag_inst3.set_mc_sample_from_MCMC_instance(lm_fixeff_inst3)
+# diag_inst3.set_variable_names(["sigma2"]+["beta"+str(i) for i in range(model2_param_dim)])
+# diag_inst3.print_summaries(round=8)
+
+# diag_inst3.show_hist((3,5))

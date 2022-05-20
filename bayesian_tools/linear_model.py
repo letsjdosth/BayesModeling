@@ -2,8 +2,12 @@ from random import seed, normalvariate
 
 import numpy as np
 
-from MCMC_Core import MCMC_base, MCMC_Gibbs
-from sampler_gamma import Sampler_univariate_InvChisq, Sampler_univariate_InvGamma
+if __name__=="__main__":
+    from MCMC_Core import MCMC_base, MCMC_Gibbs
+    from sampler_gamma import Sampler_univariate_InvChisq, Sampler_univariate_InvGamma
+else:
+    from bayesian_tools.MCMC_Core import MCMC_base, MCMC_Gibbs
+    from bayesian_tools.sampler_gamma import Sampler_univariate_InvChisq, Sampler_univariate_InvGamma
 
 class LM_noninfo_prior(MCMC_base):
     #prior p(mu, sigma^2) ~ sigma^(-2)
@@ -42,19 +46,22 @@ class LM_noninfo_prior(MCMC_base):
     
 
 class LM_random_eff_fixed_slope_noninfo_prior(MCMC_Gibbs):
-    #prior p(mu, sigma^2) ~ sigma^(-2)
+    #prior p(mu, sigma^2) ~ 1*inv_gamma(self.hyper_tau2_0_shape, self.hyper_tau2_0_rate)
+    #when 0, it get to be p(mu,sigma^2)~ sigma^(-2)
+    #however, improper prior may cause a stuck in posterior
     def __init__(self, response_vec, design_matrix, rand_eff_group_col_indicator_list, initial, rnd_seed) -> None:
         # rand_eff_group_indicator_list: 1 if the variable is in the group / 0 if not
         #now, this class support only 'one' random effect group.
         self.rand_eff_group = rand_eff_group_col_indicator_list
         self.x = design_matrix
         self.y = response_vec
-        self.hyper_tau2_1 = 100
+        self.hyper_tau2_1 = 10000
         self.hyper_mu1 = 0
-
+        self.hyper_tau2_0_shape = 0.1 # tune here if needed
+        self.hyper_tau2_0_rate = 0.1 # tune here if needed
 
         self.n = design_matrix.shape[0]
-        self.dim_beta = design_matrix.shape[1] #k+1
+        self.dim_beta = design_matrix.shape[1]
 
         self.MC_sample = [initial]
         #  0       1       2    3
@@ -81,6 +88,8 @@ class LM_random_eff_fixed_slope_noninfo_prior(MCMC_Gibbs):
             elif ind==1:
                 D_inv_list.append(1/new_sample[3])
                 m_list.append(new_sample[2])
+            else:
+                raise ValueError("check your random effect group indicator list.")
         D_inv = np.diag(D_inv_list)
         m = np.array(m_list)
 
@@ -96,7 +105,7 @@ class LM_random_eff_fixed_slope_noninfo_prior(MCMC_Gibbs):
         #  0       1       2    3
         # [[beta], sigma2, mu0, tau2_0]
         sigma2_shape = self.n/2
-        resid = self.y - self.x@new_sample[0]
+        resid = self.y - (self.x@new_sample[0])
         sigma2_rate = np.dot(resid, resid)/2
         new_sigma2 = self.inv_gamma_sampler.sampler(sigma2_shape, sigma2_rate)
         new_sample[1] = new_sigma2
@@ -106,13 +115,13 @@ class LM_random_eff_fixed_slope_noninfo_prior(MCMC_Gibbs):
         new_sample = [np.array([beta_i for beta_i in last_param[0]])] + [last_param[i] for i in range(1,4)]
         #  0       1       2    3
         # [[beta], sigma2, mu0, tau2_0]
-        mu0_mean = 0
+        mu0_sum = 0
         num_group_member = 0
         for i, ind in enumerate(self.rand_eff_group):
             if ind==1:
                 num_group_member += 1
-                mu0_mean += new_sample[0][i]
-        mu0_mean = mu0_mean/num_group_member
+                mu0_sum += new_sample[0][i]
+        mu0_mean = mu0_sum/num_group_member
         mu0_var = new_sample[3]/num_group_member
         new_mu0 = normalvariate(mu0_mean, mu0_var**0.5)
         new_sample[2] = new_mu0
@@ -130,7 +139,7 @@ class LM_random_eff_fixed_slope_noninfo_prior(MCMC_Gibbs):
                 tau2_rate += ((new_sample[0][i]-new_sample[2])**2)/2
 
         tau2_shape = num_group_member/2
-        new_tau2 = self.inv_gamma_sampler.sampler(tau2_shape, tau2_rate)
+        new_tau2 = self.inv_gamma_sampler.sampler(tau2_shape+self.hyper_tau2_0_shape, tau2_rate+self.hyper_tau2_0_rate)
         new_sample[3] = new_tau2
         return new_sample
 
@@ -166,56 +175,56 @@ if __name__=="__main__":
     
 
     test2_x = np.array([
-        [1,0,0,0,1],
-        [1,0,0,0,2],
-        [1,0,0,0,3],
-        [1,0,0,0,4],
-        [1,0,0,0,5],
-        [1,0,0,0,6],
-        [1,0,0,0,7],
+        [1,0,0,0,1,1],
+        [1,0,0,0,2,1],
+        [1,0,0,0,3,2],
+        [1,0,0,0,4,2],
+        [1,0,0,0,5,3],
+        [1,0,0,0,6,3],
+        [1,0,0,0,7,3],
 
-        [0,1,0,0,1],
-        [0,1,0,0,2],
-        [0,1,0,0,3],
-        [0,1,0,0,4],
-        [0,1,0,0,5],
-        [0,1,0,0,6],
-        [0,1,0,0,7],
+        [0,1,0,0,1,1],
+        [0,1,0,0,2,1],
+        [0,1,0,0,3,2],
+        [0,1,0,0,4,2],
+        [0,1,0,0,5,3],
+        [0,1,0,0,6,3],
+        [0,1,0,0,7,3],
 
-        [0,0,1,0,-1],
-        [0,0,1,0,-2],
-        [0,0,1,0,-3],
-        [0,0,1,0,-4],
-        [0,0,1,0,-5],
-        [0,0,1,0,-6],
-        [0,0,1,0,-7],
+        [0,0,1,0,-1,1],
+        [0,0,1,0,-2,1],
+        [0,0,1,0,-3,2],
+        [0,0,1,0,-4,2],
+        [0,0,1,0,-5,3],
+        [0,0,1,0,-6,3],
+        [0,0,1,0,-7,3],
 
-        [0,0,0,1,-1],
-        [0,0,0,1,-2],
-        [0,0,0,1,-3],
-        [0,0,0,1,-4],
-        [0,0,0,1,-5],
-        [0,0,0,1,-6],
-        [0,0,0,1,-7],
+        [0,0,0,1,-1,1],
+        [0,0,0,1,-2,1],
+        [0,0,0,1,-3,2],
+        [0,0,0,1,-4,2],
+        [0,0,0,1,-5,3],
+        [0,0,0,1,-6,3],
+        [0,0,0,1,-7,3],
         ])
-    test2_y = test2_x[:,0]*(-1) + test2_x[:,1]*3 + test2_x[:,2]*(-2) + test2_x[:,3]*1 + test2_x[:,4]*1 + np.array([normalvariate(0, 0.4) for _ in test2_x])
+    test2_y = test2_x[:,0]*(-1) + test2_x[:,1]*3 + test2_x[:,2]*(-2) + test2_x[:,3]*1 + test2_x[:,4]*1 + test2_x[:,5]*0.5 + np.array([normalvariate(0, 0.4) for _ in test2_x])
     print(test2_y)
-    test2_indicator = [1,1,1,1,0]
+    test2_indicator = [1,1,1,1,0,0]
     #  0       1       2    3
     # [[beta], sigma2, mu0, tau2_0]
-    test2_initial = [np.array([0,0,0,0,0]),1, 0, 1]
+    test2_initial = [np.array([0,0,0,0,0,0]),1, 0, 1]
     lm_inst2 = LM_random_eff_fixed_slope_noninfo_prior(test2_y, test2_x, test2_indicator, test2_initial, 20220519)
-    lm_inst2.generate_samples(50000, print_iter_cycle=10000)
+    lm_inst2.generate_samples(30000, print_iter_cycle=10000)
     
     
     from MCMC_Core import MCMC_Diag
     diag_inst21 = MCMC_Diag()
     betas2 = [x[0] for x in lm_inst2.MC_sample]
     diag_inst21.set_mc_samples_from_list(betas2)
-    diag_inst21.set_variable_names(["beta0", "beta1", "beta2", "beta3", "beta4"])
+    diag_inst21.set_variable_names(["beta0", "beta1", "beta2", "beta3", "beta4", "beta5"])
     diag_inst21.print_summaries(round=8)
-    diag_inst21.show_hist((1,5))
-    diag_inst21.show_traceplot((1,5))
+    diag_inst21.show_hist((1,6))
+    diag_inst21.show_traceplot((1,6))
 
     diag_inst22 = MCMC_Diag()
     others2 = [x[1:4] for x in lm_inst2.MC_sample]
