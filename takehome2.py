@@ -4,11 +4,12 @@ import matplotlib.pyplot as plt
 
 from bayesian_tools.linear_model import LM_noninfo_prior, LM_random_eff_fixed_slope_noninfo_prior, Regression_Model_Checker, InfomationCriteria_for_LM
 from bayesian_tools.MCMC_Core import MCMC_Diag
-from bayesian_tools.info_criteria import InfomationCriteria
 
 class DesignMatrixFactory:
     def __init__(self):
         self._load()
+        self._add_transformed_column(["population_density","gdp_per_capita"])
+        self._normalize()
 
     def _load(self, file_path = "dataset/covid.csv"):
         self.unnormalized_covid_data = pd.read_csv(file_path)
@@ -16,6 +17,12 @@ class DesignMatrixFactory:
         self.scale_dict = self.unnormalized_covid_data.std(numeric_only=True)
         self.unnormalized_response = self.unnormalized_covid_data["total_cases_per_million"]
 
+    def _add_transformed_column(self, colname_list):
+        for col in colname_list:
+            new_colname = "log_"+col
+            self.unnormalized_covid_data[new_colname] = np.log(self.unnormalized_covid_data[col])
+
+    def _normalize(self):
         #normalize covariates
         self.covid_data=(self.unnormalized_covid_data-self.unnormalized_covid_data.mean(numeric_only=True))/self.unnormalized_covid_data.std(numeric_only=True)
         for object_var in ["continent", "location"]:
@@ -44,35 +51,49 @@ class DesignMatrixFactory:
         variable_list = ['continent_Africa', 'continent_Asia', 'continent_Europe', 'continent_North America', 'continent_South America'] + variable_list
         return np.array(self.covid_data_coded_continent[variable_list])
 
+
 factory_inst = DesignMatrixFactory()
 selected_variables = [
     "total_vaccinations_per_hundred",
-    "population_density",
+    "log_population_density",
     "aged_65_older",
-    "gdp_per_capita",
+    "log_gdp_per_capita",
     "hospital_beds_per_thousand",
-    # "cardiovasc_death_rate",
-    # "diabetes_prevalence",
     "male_smokers"
     ]
 
-### model1: without continent ###
+#scaler
+print(factory_inst.scale_dict)
 
-model1_y = np.log(factory_inst.make_response_vector(normalize=False))
+#transform data
+model1_y = np.log(factory_inst.make_response_vector(normalize=False)/1000000)
 model1_x = factory_inst.make_design_matrix_with_intercept(selected_variables)
+
+
+model2_y = np.log(factory_inst.make_response_vector(normalize=False)/1000000)
+model2_x = factory_inst.make_design_matrix_with_continent_indicator(selected_variables)
+model2_param_dim = model2_x.shape[1]
+rnd_eff_indicator = [1 for _ in range(5)]+[0 for _ in range(model2_param_dim-5)]
+
+
+### model1: without continent ###
+print("### model1: without continent ###")
 
 lm_inst1 = LM_noninfo_prior(model1_y, model1_x, 20220519)
 lm_inst1.generate_samples(10000, print_iter_cycle=2500)
 
 diag_inst1 = MCMC_Diag()
 diag_inst1.set_mc_sample_from_MCMC_instance(lm_inst1)
-diag_inst1.set_variable_names(["sigma2"]+["beta"+str(i) for i in range(model1_x.shape[1])])
-diag_inst1.print_summaries(round=8)
+diag_inst1.set_variable_names(["sigma2", "mu"]+["beta"+str(i) for i in range(1, model1_x.shape[1])])
+diag_inst1.print_summaries(round=3, latex_table_format=True)
 lm_inst1.print_freqentist_result()
 
-# diag_inst1.show_hist((1,1), [0])
+diag_inst1.show_hist((1,1), [0])
+diag_inst1.show_hist((1,1), [1])
 # diag_inst1.show_hist((2,3), [1,2,3,4,5,6])
-# diag_inst1.show_scatterplot(1,2)
+diag_inst1.show_hist_superimposed([2,3,4,5,6], y_lab="beta")
+
+diag_inst1.show_scatterplot(1,2)
 
 beta_samples1 = [np.array(x[1:]) for x in diag_inst1.MC_sample]
 sigma2_samples1 = diag_inst1.get_specific_dim_samples(0)
@@ -80,7 +101,7 @@ checker_inst1 = Regression_Model_Checker(model1_y, model1_x, beta_samples1, sigm
 checker_inst1.show_residual_plot()
 checker_inst1.show_residual_normalProbplot()
 for i in range(5):
-    checker_inst1.show_posterior_predictive_at_given_data_point(i, show=False)
+    checker_inst1.show_posterior_predictive_at_given_data_point(i, show=False, x_lab="Posterior Predictives")
 plt.show()
 
 IC_inst1 = InfomationCriteria_for_LM(model1_y, model1_x, beta_samples1, sigma2_samples1)
@@ -103,12 +124,12 @@ lm_inst1_cv1.generate_samples(10000, print_iter_cycle=2500)
 diag_inst1_cv1 = MCMC_Diag()
 diag_inst1_cv1.set_mc_sample_from_MCMC_instance(lm_inst1_cv1)
 diag_inst1_cv1.set_variable_names(["sigma2"]+["beta"+str(i) for i in range(model1_x.shape[1])])
-diag_inst1_cv1.print_summaries(round=8)
+# diag_inst1_cv1.print_summaries(round=8)
 
 beta_samples1_cv1 = [np.array(x[1:]) for x in diag_inst1_cv1.MC_sample]
 sigma2_samples1_cv1 = diag_inst1_cv1.get_specific_dim_samples(0)
 checker_inst1_cv1 = Regression_Model_Checker(model1_training_without_us_y, model1_training_without_us_x, beta_samples1_cv1, sigma2_samples1_cv1)
-checker_inst1_cv1.show_posterior_predictive_at_new_point(model1_testing_us_x, model1_testing_us_y)
+checker_inst1_cv1.show_posterior_predictive_at_new_point(model1_testing_us_x, model1_testing_us_y, x_lab="Validation: US", x_lim=(-6,1))
 
 
 model1_training_without_sl_x = np.delete(model1_x, obj=29, axis=0)
@@ -122,36 +143,34 @@ lm_inst1_cv2.generate_samples(10000, print_iter_cycle=2500)
 diag_inst1_cv2 = MCMC_Diag()
 diag_inst1_cv2.set_mc_sample_from_MCMC_instance(lm_inst1_cv2)
 diag_inst1_cv2.set_variable_names(["sigma2"]+["beta"+str(i) for i in range(model1_x.shape[1])])
-diag_inst1_cv2.print_summaries(round=8)
+# diag_inst1_cv2.print_summaries(round=8)
 
 beta_samples1_cv2 = [np.array(x[1:]) for x in diag_inst1_cv2.MC_sample]
 sigma2_samples1_cv2 = diag_inst1_cv2.get_specific_dim_samples(0)
 checker_inst1_cv2 = Regression_Model_Checker(model1_training_without_sl_y, model1_training_without_sl_x, beta_samples1_cv2, sigma2_samples1_cv2)
-checker_inst1_cv2.show_posterior_predictive_at_new_point(model1_testing_sl_x, model1_testing_sl_y)
+checker_inst1_cv2.show_posterior_predictive_at_new_point(model1_testing_sl_x, model1_testing_sl_y, x_lab="Validation: Sri Lanka", x_lim=(-6,1))
 
 
 
 ### model2: with continent, random-intercept model ###
+print("### model2: with continent, random-intercept model ###")
 
-model2_y = np.log(factory_inst.make_response_vector(normalize=False))
-model2_x = factory_inst.make_design_matrix_with_continent_indicator(selected_variables)
-model2_param_dim = model2_x.shape[1]
-
-rnd_eff_indicator = [1 for _ in range(5)]+[0 for _ in range(model2_param_dim-5)]
 model2_initial = [[11 for _ in range(5)]+[0 for _ in range(model2_param_dim-5)], 1, 11, 1]
 #  0       1       2    3
 # [[beta], sigma2, mu0, tau2_0]
 lm_randeff_inst2 = LM_random_eff_fixed_slope_noninfo_prior(model2_y, model2_x, rnd_eff_indicator, model2_initial, 20220519)
-lm_randeff_inst2.generate_samples(10000)
+lm_randeff_inst2.generate_samples(13000)
 
 diag_inst21 = MCMC_Diag()
 beta_samples2 = [x[0] for x in lm_randeff_inst2.MC_sample]
 diag_inst21.set_mc_samples_from_list(beta_samples2)
-diag_inst21.set_variable_names(["beta"+str(i) for i in range(model2_param_dim)])
+diag_inst21.set_variable_names(["alpha"+str(i) for i in range(1,6)]+["beta"+str(i) for i in range(1,7)])
 diag_inst21.burnin(3000)
-diag_inst21.print_summaries(round=8)
+diag_inst21.print_summaries(round=3, latex_table_format=True)
 # diag_inst21.show_hist((3,5))
-# diag_inst21.show_traceplot((3,5))
+diag_inst21.show_hist_superimposed([0,1,2,3,4], y_lab="alpha")
+diag_inst21.show_hist_superimposed([5,6,7,8,9,10], y_lab="beta")
+diag_inst21.show_traceplot((4,3))
 # diag_inst21.show_scatterplot(0,1)
 # diag_inst21.show_scatterplot(0,6)
 # diag_inst21.show_scatterplot(1,7)
@@ -162,9 +181,14 @@ others2 = [x[1:4] for x in lm_randeff_inst2.MC_sample]
 diag_inst22.set_mc_samples_from_list(others2)
 diag_inst22.set_variable_names(["sigma2", "mu0", "tau2_0"])
 diag_inst22.burnin(3000)
-diag_inst22.print_summaries(round=8)
-diag_inst22.show_hist((1,3))
+diag_inst22.print_summaries(round=3, latex_table_format=True)
+diag_inst22.show_hist((1,1),[0])
+diag_inst22.show_hist((1,1),[1])
+diag_inst22.show_hist((1,1),[2])
+
 diag_inst22.show_traceplot((1,3))
+diag_inst22.show_scatterplot(0,1)
+diag_inst22.show_scatterplot(0,2)
 diag_inst22.show_scatterplot(1,2)
 
 
@@ -174,7 +198,7 @@ checker_inst2 = Regression_Model_Checker(model2_y, model2_x, beta_samples2, sigm
 checker_inst2.show_residual_plot()
 checker_inst2.show_residual_normalProbplot()
 for i in range(5):
-    checker_inst2.show_posterior_predictive_at_given_data_point(i, show=False)
+    checker_inst2.show_posterior_predictive_at_given_data_point(i, show=False, x_lab="Posterior Predictives")
 plt.show()
 
 IC_inst2 = InfomationCriteria_for_LM(model2_y, model2_x, beta_samples2, sigma2_samples2)
@@ -193,25 +217,25 @@ model2_testing_us_x = model2_x[35,]
 model2_testing_us_y = model2_y[35]
 
 lm_randeff_inst2_cv1 = LM_random_eff_fixed_slope_noninfo_prior(model2_training_without_us_y, model2_training_without_us_x, rnd_eff_indicator, model2_initial, 20220519)
-lm_randeff_inst2_cv1.generate_samples(10000, print_iter_cycle=2500)
+lm_randeff_inst2_cv1.generate_samples(13000, print_iter_cycle=2500)
 
 diag_inst21_cv1 = MCMC_Diag()
 beta_samples2_cv1 = [x[0] for x in lm_randeff_inst2_cv1.MC_sample]
 diag_inst21_cv1.set_mc_samples_from_list(beta_samples2_cv1)
 diag_inst21_cv1.set_variable_names(["beta"+str(i) for i in range(model2_param_dim)])
 diag_inst21_cv1.burnin(3000)
-diag_inst21_cv1.print_summaries(round=8)
+# diag_inst21_cv1.print_summaries(round=8)
 
 diag_inst22_cv1 = MCMC_Diag()
 others2_cv1 = [x[1:4] for x in lm_randeff_inst2_cv1.MC_sample]
 diag_inst22_cv1.set_mc_samples_from_list(others2_cv1)
 diag_inst22_cv1.set_variable_names(["sigma2", "mu0", "tau2_0"])
 diag_inst22_cv1.burnin(3000)
-diag_inst22_cv1.print_summaries(round=8)
+# diag_inst22_cv1.print_summaries(round=8)
 
 sigma2_samples2_cv1 = diag_inst22_cv1.get_specific_dim_samples(0)
 checker_inst2_cv1 = Regression_Model_Checker(model2_training_without_us_y, model2_training_without_us_x, beta_samples2_cv1, sigma2_samples2_cv1)
-checker_inst2_cv1.show_posterior_predictive_at_new_point(model2_testing_us_x, model2_testing_us_y)
+checker_inst2_cv1.show_posterior_predictive_at_new_point(model2_testing_us_x, model2_testing_us_y, x_lab="Validation: US", x_lim=(-6,1))
 
 
 model2_training_without_sl_x = np.delete(model2_x, obj=29, axis=0)
@@ -220,36 +244,42 @@ model2_testing_sl_x = model2_x[29,]
 model2_testing_sl_y = model2_y[29]
 
 lm_randeff_inst2_cv2 = LM_random_eff_fixed_slope_noninfo_prior(model2_training_without_sl_y, model2_training_without_sl_x, rnd_eff_indicator, model2_initial, 20220519)
-lm_randeff_inst2_cv2.generate_samples(10000, print_iter_cycle=2500)
+lm_randeff_inst2_cv2.generate_samples(13000, print_iter_cycle=2500)
 
 diag_inst21_cv2 = MCMC_Diag()
 beta_samples2_cv2 = [x[0] for x in lm_randeff_inst2_cv2.MC_sample]
 diag_inst21_cv2.set_mc_samples_from_list(beta_samples2_cv2)
 diag_inst21_cv2.set_variable_names(["beta"+str(i) for i in range(model2_param_dim)])
 diag_inst21_cv2.burnin(3000)
-diag_inst21_cv2.print_summaries(round=8)
+# diag_inst21_cv2.print_summaries(round=8)
 
 diag_inst22_cv2 = MCMC_Diag()
 others2_cv2 = [x[1:4] for x in lm_randeff_inst2_cv2.MC_sample]
 diag_inst22_cv2.set_mc_samples_from_list(others2_cv2)
 diag_inst22_cv2.set_variable_names(["sigma2", "mu0", "tau2_0"])
 diag_inst22_cv2.burnin(3000)
-diag_inst22_cv2.print_summaries(round=8)
+# diag_inst22_cv2.print_summaries(round=8)
 
 sigma2_samples2_cv2 = diag_inst22_cv2.get_specific_dim_samples(0)
 checker_inst2_cv2 = Regression_Model_Checker(model2_training_without_sl_y, model2_training_without_sl_x, beta_samples2_cv2, sigma2_samples2_cv2)
-checker_inst2_cv2.show_posterior_predictive_at_new_point(model2_testing_sl_x, model2_testing_sl_y)
+checker_inst2_cv2.show_posterior_predictive_at_new_point(model2_testing_sl_x, model2_testing_sl_y, x_lab="Validation: Sri Lanka", x_lim=(-6,1))
+
 
 
 # ### model3: with continent, fixed effect model ###
+print("# ### model3: with continent, fixed effect model ###")
 
 lm_fixeff_inst3 = LM_noninfo_prior(model2_y, model2_x, 20220519)
 lm_fixeff_inst3.generate_samples(10000, print_iter_cycle=2500)
 diag_inst3 = MCMC_Diag()
 diag_inst3.set_mc_sample_from_MCMC_instance(lm_fixeff_inst3)
-diag_inst3.set_variable_names(["sigma2"]+["beta"+str(i) for i in range(model2_param_dim)])
-diag_inst3.print_summaries(round=8)
-diag_inst3.show_hist((3,5))
+diag_inst3.set_variable_names(["sigma2"]+["alpha"+str(i) for i in range(1,6)]+["beta"+str(i) for i in range(1,len(selected_variables)+1)])
+diag_inst3.print_summaries(round=3, latex_table_format=True)
+diag_inst3.show_hist((1,1),[0])
+diag_inst3.show_hist_superimposed([1,2,3,4,5], y_lab="alpha")
+diag_inst3.show_hist_superimposed([6,7,8,9,10,11], y_lab="beta")
+
+
 
 sigma2_samples3 = diag_inst3.get_specific_dim_samples(0)
 beta_samples3 = [np.array(x[1:]) for x in diag_inst3.MC_sample]
@@ -257,7 +287,7 @@ checker_inst2 = Regression_Model_Checker(model2_y, model2_x, beta_samples3, sigm
 checker_inst2.show_residual_plot()
 checker_inst2.show_residual_normalProbplot()
 for i in range(5):
-    checker_inst2.show_posterior_predictive_at_given_data_point(i, show=False)
+    checker_inst2.show_posterior_predictive_at_given_data_point(i, show=False, x_lab="Posterior Predictives")
 plt.show()
 
 IC_inst3 = InfomationCriteria_for_LM(model2_y, model2_x, beta_samples3, sigma2_samples3)
@@ -281,12 +311,12 @@ lm_inst3_cv1.generate_samples(10000, print_iter_cycle=2500)
 diag_inst3_cv1 = MCMC_Diag()
 diag_inst3_cv1.set_mc_sample_from_MCMC_instance(lm_inst3_cv1)
 diag_inst3_cv1.set_variable_names(["sigma2"]+["beta"+str(i) for i in range(model1_x.shape[1])])
-diag_inst3_cv1.print_summaries(round=8)
+# diag_inst3_cv1.print_summaries(round=8)
 
 beta_samples3_cv1 = [np.array(x[1:]) for x in diag_inst3_cv1.MC_sample]
 sigma2_samples3_cv1 = diag_inst3_cv1.get_specific_dim_samples(0)
 checker_inst3_cv1 = Regression_Model_Checker(model3_training_without_us_y, model3_training_without_us_x, beta_samples3_cv1, sigma2_samples3_cv1)
-checker_inst3_cv1.show_posterior_predictive_at_new_point(model3_testing_us_x, model3_testing_us_y)
+checker_inst3_cv1.show_posterior_predictive_at_new_point(model3_testing_us_x, model3_testing_us_y, x_lab="Validation: US", x_lim=(-6,1))
 
 
 model3_training_without_sl_x = np.delete(model2_x, obj=29, axis=0)
@@ -301,9 +331,9 @@ lm_inst3_cv2.generate_samples(10000, print_iter_cycle=2500)
 diag_inst3_cv2 = MCMC_Diag()
 diag_inst3_cv2.set_mc_sample_from_MCMC_instance(lm_inst3_cv2)
 diag_inst3_cv2.set_variable_names(["sigma2"]+["beta"+str(i) for i in range(model1_x.shape[1])])
-diag_inst3_cv2.print_summaries(round=8)
+# diag_inst3_cv2.print_summaries(round=8)
 
 beta_samples3_cv2 = [np.array(x[1:]) for x in diag_inst3_cv2.MC_sample]
 sigma2_samples3_cv2 = diag_inst3_cv2.get_specific_dim_samples(0)
 checker_inst3_cv2 = Regression_Model_Checker(model3_training_without_sl_y, model3_training_without_sl_x, beta_samples3_cv2, sigma2_samples3_cv2)
-checker_inst3_cv2.show_posterior_predictive_at_new_point(model3_testing_sl_x, model3_testing_sl_y)
+checker_inst3_cv2.show_posterior_predictive_at_new_point(model3_testing_sl_x, model3_testing_sl_y, x_lab="Validation: Sri Lanka", x_lim=(-6,1))

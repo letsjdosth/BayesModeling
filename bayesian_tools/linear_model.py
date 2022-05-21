@@ -220,7 +220,7 @@ class Regression_Model_Checker:
         if show:
             plt.show()
 
-    def show_posterior_predictive_at_new_point(self, design_row, reference_response_val=None, show=True, color=None):
+    def show_posterior_predictive_at_new_point(self, design_row, reference_response_val=None, show=True, color=None, x_lab=None, x_lim=None):
         predicted = []
         for beta, sigma2 in zip(self.beta_samples, self.sigma2_samples):
             new_y = (design_row @ beta) + normalvariate(0, sigma2**0.5)
@@ -235,14 +235,19 @@ class Regression_Model_Checker:
             plt.hist(predicted, bins=50, density=True, histtype="step", color=desig_color)
             if reference_response_val is not None:
                 plt.axvline(reference_response_val, color=desig_color)
-        plt.xlabel("predicted at:"+str(design_row))
+        if x_lab:
+            plt.xlabel(x_lab)
+        else:
+            plt.xlabel("predicted at:"+str(design_row))
+        if x_lim:
+            plt.xlim(x_lim)
         if show:
             plt.show()        
 
-    def show_posterior_predictive_at_given_data_point(self, data_idx, show=True):
+    def show_posterior_predictive_at_given_data_point(self, data_idx, show=True, x_lab=None):
         design_row = self.x[data_idx,:]
         ref_y = self.y[data_idx]
-        self.show_posterior_predictive_at_new_point(design_row, ref_y, show, color=data_idx)
+        self.show_posterior_predictive_at_new_point(design_row, ref_y, show, color=data_idx, x_lab=x_lab)
 
 
 

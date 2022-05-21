@@ -257,10 +257,10 @@ class MCMC_Diag:
             plt.show()
 
     
-    def show_hist_specific_dim(self, dim_idx, show=False):
+    def show_hist_specific_dim(self, dim_idx, show=False, hist_type="bar"):
         hist_data = self.get_specific_dim_samples(dim_idx)
-        
-        plt.hist(hist_data, bins=100)
+
+        plt.hist(hist_data, bins=100, histtype=hist_type)
         if self.graphic_use_variable_name:
             plt.ylabel(self.variable_names[dim_idx])
         else:
@@ -291,6 +291,25 @@ class MCMC_Diag:
         for i, dim_idx in enumerate(choose_dims):
             plt.subplot(grid_row, grid_column, i+1)
             self.show_hist_specific_dim(dim_idx)
+        if show:
+            plt.show()
+
+    def show_hist_superimposed(self, choose_dims=None, show=True, y_lab=None):
+        if choose_dims is None:
+            choose_dims = range(self.num_dim)
+        self.graphic_hist_mean = False
+        self.graphic_hist_median = False
+        self.graphic_hist_95CI = False
+       
+        for _, dim_idx in enumerate(choose_dims):
+            self.show_hist_specific_dim(dim_idx, hist_type="step")
+        if y_lab:
+            plt.ylabel(y_lab)
+
+        self.graphic_hist_mean = True
+        self.graphic_hist_median = True
+        self.graphic_hist_95CI = True
+        
         if show:
             plt.show()
 
