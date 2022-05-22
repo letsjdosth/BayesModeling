@@ -153,6 +153,8 @@ checker_inst1_cv2.show_posterior_predictive_at_new_point(model1_testing_sl_x, mo
 
 
 ### model2: with continent, random-intercept model ###
+### Important: this model is renamed as model 3 in the paper ###
+
 print("### model2: with continent, random-intercept model ###")
 
 model2_initial = [[11 for _ in range(5)]+[0 for _ in range(model2_param_dim-5)], 1, 11, 1]
@@ -266,7 +268,8 @@ checker_inst2_cv2.show_posterior_predictive_at_new_point(model2_testing_sl_x, mo
 
 
 
-# ### model3: with continent, fixed effect model ###
+### model3: with continent, fixed effect model ###
+### Important: this model is renamed as model 2 in the paper ###
 print("# ### model3: with continent, fixed effect model ###")
 
 lm_fixeff_inst3 = LM_noninfo_prior(model2_y, model2_x, 20220519)

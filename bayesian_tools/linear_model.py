@@ -1,6 +1,4 @@
-from distutils.command import check
 from random import seed, normalvariate
-from turtle import color
 
 import numpy as np
 import matplotlib.pyplot as plt
