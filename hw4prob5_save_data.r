@@ -1,0 +1,5 @@
+library(datasets)
+data(mtcars)
+head(mtcars)
+lm(qsec~., data=mtcars)
+length(mtcars[,1])
