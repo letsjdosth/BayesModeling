@@ -46,6 +46,16 @@ class MCMC_base:
 
 
 class MCMC_Gibbs(MCMC_base):
+    def deep_copier(self, x_iterable) -> list:
+        rep_x_list = []
+        for x in x_iterable:
+            try:
+                _ = iter(x)
+                rep_x_list.append(self.deep_copier(x))
+            except TypeError:
+                rep_x_list.append(x)
+        return rep_x_list
+
     def sampler(self, **kwargs):
         last = self.MC_sample[-1]
         new = [x for x in last] #[nu, theta]
