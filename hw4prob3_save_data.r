@@ -17,4 +17,4 @@ head(broadway)
 # simple scatter plot
 library(ggplot2)
 ggplot(broadway) + aes(x = week_ending, y = gross) + geom_point(size = .5) + facet_wrap(~show)
-write.table(broadway, "C:/gitProject/BayesModeling/dataset/broadway.csv", row.names=FALSE)
+write.table(broadway, "C:/gitProject/BayesModeling/dataset/broadway.csv", row.names=FALSE, sep=",")

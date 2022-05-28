@@ -72,7 +72,7 @@ rand_int_X, y, group_idx = factory.get_yXi_for_rand_intercept_model()
 rand_slope_X, y, group_idx = factory.get_yXi_for_rand_slope_model()
 
 
-class HW4Prob1_Fixed(LM_base):
+class HW4Prob2_Fixed(LM_base):
     def __init__(self, response_vec, design_matrix, initial, rnd_seed=None) -> None:
         super().__init__(response_vec, design_matrix, rnd_seed)
         self.np_rng = np.random.default_rng(seed=rnd_seed)
@@ -121,7 +121,7 @@ class HW4Prob1_Fixed(LM_base):
         self.MC_sample.append(new)
 
 fixed_initial = [1,[0,0,0,0,0,0]]
-fixed_inst = HW4Prob1_Fixed(y, fixed_X, fixed_initial)
+fixed_inst = HW4Prob2_Fixed(y, fixed_X, fixed_initial)
 fixed_inst.generate_samples(10000)
 # print(fixed_inst.MC_sample[-1])
 fixed_beta = [sample[1] for sample in fixed_inst.MC_sample]
@@ -142,7 +142,7 @@ fixed_diag_inst2.show_acf(30,(1,1))
 
 
 
-class HW4Prob1_Rand_Int(LM_base):
+class HW4Prob2_Rand_Int(LM_base):
     def __init__(self, response_vec, design_matrix, initial, rnd_seed=None) -> None:
         super().__init__(response_vec, design_matrix, rnd_seed)
         self.np_rng = np.random.default_rng(seed=rnd_seed)
@@ -226,7 +226,7 @@ class HW4Prob1_Rand_Int(LM_base):
 # 0       1                                          2    3
 #[sigma2, [[beta0_1,...,beta0_20], beta1,...,beta5], mu0, tau2_0]
 rand_int_initial = [1,[[0 for _ in range(20)],0,0,0,0,0],0,1]
-rand_int_inst = HW4Prob1_Rand_Int(y, rand_int_X, rand_int_initial)
+rand_int_inst = HW4Prob2_Rand_Int(y, rand_int_X, rand_int_initial)
 rand_int_inst.generate_samples(10000)
 
 rand_int_beta0 = [sample[1][0] for sample in rand_int_inst.MC_sample]
@@ -256,7 +256,7 @@ rand_int_diag_inst3.show_acf(30,(1,3))
 
 
 
-class HW4Prob1_Rand_Slope(LM_base):
+class HW4Prob2_Rand_Slope(LM_base):
     def __init__(self, response_vec, design_matrix, initial, rnd_seed=None) -> None:
         super().__init__(response_vec, design_matrix, rnd_seed)
         self.np_rng = np.random.default_rng(seed=rnd_seed)
@@ -347,7 +347,7 @@ class HW4Prob1_Rand_Slope(LM_base):
 # 0       1                                                                            2              3
 #[sigma2, [[beta0_1,...,beta0_20], [beta1_1,...,beta1_20],...,[beta5_1,...,beta5_20]], [mu0,...,mu5], [tau2_0,...,tau2_5]]
 rand_slope_initial = [1, [[0 for _ in range(20)] for _ in range(6)], [0 for _ in range(6)], [1 for _ in range(6)]]
-rand_slope_inst = HW4Prob1_Rand_Slope(y, rand_slope_X, rand_slope_initial)
+rand_slope_inst = HW4Prob2_Rand_Slope(y, rand_slope_X, rand_slope_initial)
 
 rand_slope_inst.generate_samples(10000)
 
