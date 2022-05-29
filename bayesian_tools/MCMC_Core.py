@@ -389,6 +389,55 @@ class MCMC_Diag:
         if show:
             plt.show()
     
+    def show_boxplot(self, choose_dims=None, show=True):
+        boxplot_data = []
+        if choose_dims is None:
+            choose_dims = [i for i in range(self.num_dim)]
+
+        for dim_idx in choose_dims:
+            boxplot_data.append(self.get_specific_dim_samples(dim_idx))
+        boxplot_data = np.transpose(np.array(boxplot_data))
+
+        label = []
+        if self.graphic_use_variable_name:
+            label = [self.variable_names[i] for i in choose_dims]
+        else:
+            label = choose_dims
+
+        plt.boxplot(boxplot_data, labels=label)
+        plt.xticks(rotation=45)
+
+        if show:
+            plt.show()
+
+    def show_mean_CI_plot(self, choose_dims=None, show=True):
+        plot_data = []
+        if choose_dims is None:
+            choose_dims = [i for i in range(self.num_dim)]
+
+        for dim_idx in choose_dims:
+            plot_data.append(self.get_specific_dim_samples(dim_idx))
+        plot_data = np.array(plot_data)
+
+        label = []
+        if self.graphic_use_variable_name:
+            label = [self.variable_names[i] for i in choose_dims]
+        else:
+            label = choose_dims
+
+        for i, dim_idx in enumerate(choose_dims):
+            quantile = self.get_sample_quantile([0.025, 0.25, 0.5, 0.75, 0.975])[dim_idx]
+            x = i+1
+            plt.plot([x], [quantile[2]], 'ro')
+            plt.plot([x, x], [quantile[0], quantile[4]], color='black', linestyle='-', linewidth=2, zorder=0)
+            plt.plot([x-0.2, x+0.2], [quantile[1], quantile[1]], color='black', linestyle='-', linewidth=2, zorder=0)
+            plt.plot([x-0.2, x+0.2], [quantile[3], quantile[3]], color='black', linestyle='-', linewidth=2, zorder=0)
+
+        plt.xticks([i+1 for i in range(len(choose_dims))], rotation=45, labels=label)
+        if show:
+            plt.show()
+
+
     def effective_sample_size(self, dim_idx, sum_lags=30):
         n = len(self.MC_sample)
         auto_corr = self.get_autocorr(dim_idx, sum_lags)

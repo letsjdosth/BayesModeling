@@ -152,7 +152,7 @@ class HW4Prob5(LM_base):
 #[sigma2, beta0, [beta1,beta2,...,beta10], [z1,...,z10], pi]
 prob5_initial = [0.1, 0, [0 for _ in range(10)], [0 for _ in range(10)], 0.5]
 prob5_inst = HW4Prob5(mtcars_y, mtcars_X, prob5_initial)
-prob5_inst.generate_samples(100000)
+prob5_inst.generate_samples(1000)
 
 # print(prob5_inst.MC_sample[-2])
 # print(prob5_inst.MC_sample[-1])
@@ -169,6 +169,7 @@ prob5_diag_inst2.show_traceplot((2,5))
 prob5_diag_inst2.show_hist((2,5))
 prob5_diag_inst2.show_acf(30,(2,5))
 
+
 prob5_diag_inst1 = MCMC_Diag()
 prob5_diag_inst1.set_mc_samples_from_list(prob5_beta)
 prob5_diag_inst1.set_variable_names(["beta_"+str(i) for i in range(11)])
@@ -176,6 +177,8 @@ prob5_diag_inst1.thinning(30)
 prob5_diag_inst1.show_traceplot((3,4))
 prob5_diag_inst1.show_hist((3,4))
 prob5_diag_inst1.show_acf(30,(3,4))
+prob5_diag_inst1.show_boxplot([i for i in range(1,11)])
+prob5_diag_inst1.show_mean_CI_plot([i for i in range(1,11)])
 
 prob5_diag_inst3 = MCMC_Diag()
 prob5_diag_inst3.set_mc_samples_from_list(prob5_others)
