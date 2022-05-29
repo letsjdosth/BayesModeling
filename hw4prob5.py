@@ -60,11 +60,11 @@ class HW4Prob5(LM_base):
         #[sigma2, beta0, [beta1,beta2,...,beta10], [z1,...,z10], pi]
         
         # able to tune these
-        self.hyper_tau2_beta0 = 1
-        self.hyper_tau2_0 = 0.1
+        self.hyper_tau2_beta0 = 10
+        self.hyper_tau2_0 = 0.01
         self.hyper_tau2_1 = 100 #tau1>tau0
         self.hyper_alpha_pi = 1 #hmm
-        self.hyper_beta_pi = 1000 #hmm
+        self.hyper_beta_pi = 1 #hmm
         self.hyper_a_sigma = 0.01
         self.hyper_b_sigma = 0.01
 
@@ -113,8 +113,8 @@ class HW4Prob5(LM_base):
         pi = last_param[4]
         new_z = []
         for beta_k in last_param[2]:
-            A_k = pi*(sigma2 * self.hyper_tau2_1)**0.5 * np.exp(- beta_k**2 / (2*sigma2*self.hyper_tau2_1))
-            B_k = (1-pi)*(sigma2 * self.hyper_tau2_0)**0.5 * np.exp(- beta_k**2 / (2*sigma2*self.hyper_tau2_0))
+            A_k = pi*(sigma2 * self.hyper_tau2_1)**(-0.5) * np.exp(- beta_k**2 / (2*sigma2*self.hyper_tau2_1))
+            B_k = (1-pi)*(sigma2 * self.hyper_tau2_0)**(-0.5) * np.exp(- beta_k**2 / (2*sigma2*self.hyper_tau2_0))
             bern_p = A_k/(A_k + B_k)
             unif_sample = self.np_rng.random()
             if unif_sample < bern_p:
@@ -161,23 +161,23 @@ prob5_beta = [[sample[1]] + sample[2] for sample in prob5_inst.MC_sample]
 prob5_z = [sample[3] for sample in prob5_inst.MC_sample]
 prob5_others = [[sample[0], sample[4]] for sample in prob5_inst.MC_sample]
 
-prob5_diag_inst1 = MCMC_Diag()
-prob5_diag_inst1.set_mc_samples_from_list(prob5_beta)
-prob5_diag_inst1.set_variable_names(["beta_"+str(i) for i in range(11)])
-# prob5_diag_inst1.show_traceplot((3,4))
-prob5_diag_inst1.show_hist((3,4))
-# prob5_diag_inst1.show_acf(30,(3,4))
-
 prob5_diag_inst2 = MCMC_Diag()
 prob5_diag_inst2.set_mc_samples_from_list(prob5_z)
 prob5_diag_inst2.set_variable_names(["z_"+str(i) for i in range(1,11)])
-# prob5_diag_inst2.show_traceplot((2,5))
+prob5_diag_inst2.show_traceplot((2,5))
 prob5_diag_inst2.show_hist((2,5))
-# prob5_diag_inst2.show_acf(30,(2,5))
+prob5_diag_inst2.show_acf(30,(2,5))
+
+prob5_diag_inst1 = MCMC_Diag()
+prob5_diag_inst1.set_mc_samples_from_list(prob5_beta)
+prob5_diag_inst1.set_variable_names(["beta_"+str(i) for i in range(11)])
+prob5_diag_inst1.show_traceplot((3,4))
+prob5_diag_inst1.show_hist((3,4))
+prob5_diag_inst1.show_acf(30,(3,4))
 
 prob5_diag_inst3 = MCMC_Diag()
 prob5_diag_inst3.set_mc_samples_from_list(prob5_others)
 prob5_diag_inst3.set_variable_names(["sigma2", "pi"])
-# prob5_diag_inst3.show_traceplot((1,2))
+prob5_diag_inst3.show_traceplot((1,2))
 prob5_diag_inst3.show_hist((1,2))
-# prob5_diag_inst3.show_acf(30,(1,2))
+prob5_diag_inst3.show_acf(30,(1,2))
