@@ -425,13 +425,16 @@ class MCMC_Diag:
         else:
             label = choose_dims
 
+        mean_vec = self.get_sample_mean()
+        mean_vec_choose_dims = [mean_vec[i] for i in choose_dims]
         for i, dim_idx in enumerate(choose_dims):
             quantile = self.get_sample_quantile([0.025, 0.25, 0.5, 0.75, 0.975])[dim_idx]
             x = i+1
-            plt.plot([x], [quantile[2]], 'ro')
+            plt.plot([x], [mean_vec_choose_dims[i]], 'ro')
             plt.plot([x, x], [quantile[0], quantile[4]], color='black', linestyle='-', linewidth=2, zorder=0)
-            plt.plot([x-0.2, x+0.2], [quantile[1], quantile[1]], color='black', linestyle='-', linewidth=2, zorder=0)
-            plt.plot([x-0.2, x+0.2], [quantile[3], quantile[3]], color='black', linestyle='-', linewidth=2, zorder=0)
+            plt.plot([x-0.1, x+0.1], [quantile[1], quantile[1]], color='black', linestyle='-', linewidth=2, zorder=0)
+            plt.plot([x-0.1, x+0.1], [quantile[3], quantile[3]], color='black', linestyle='-', linewidth=2, zorder=0)
+            plt.plot([x-0.2, x+0.2], [quantile[2], quantile[2]], color='black', linestyle='-', linewidth=2, zorder=0)
 
         plt.xticks([i+1 for i in range(len(choose_dims))], rotation=45, labels=label)
         if show:

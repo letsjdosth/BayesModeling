@@ -1,7 +1,11 @@
+from random import seed
 from bayesian_tools.LM_Core import LM_base
 from bayesian_tools.MCMC_Core import MCMC_Diag
 from special_dist_sampler.sampler_gamma import Sampler_univariate_InvGamma
 import numpy as np
+
+if __name__=="__main__":
+    seed(20220530)
 
 class SimDataFactory:
     #fixed parameters
@@ -66,10 +70,11 @@ class SimDataFactory:
         rand_slope_X = np.c_[self.intercept_one_hot_coded_mat, np.concatenate(self.x_hot_coded_mat_list, axis=1)]
         return (rand_slope_X, self.y, self.group_idx)
 
-factory = SimDataFactory()
-fixed_X, y, group_idx = factory.get_yXi_for_fixed_eff_model()
-rand_int_X, y, group_idx = factory.get_yXi_for_rand_intercept_model()
-rand_slope_X, y, group_idx = factory.get_yXi_for_rand_slope_model()
+if __name__=="__main__":
+    factory = SimDataFactory()
+    fixed_X, y, group_idx = factory.get_yXi_for_fixed_eff_model()
+    rand_int_X, y, group_idx = factory.get_yXi_for_rand_intercept_model()
+    rand_slope_X, y, group_idx = factory.get_yXi_for_rand_slope_model()
 
 
 class HW4Prob2_Fixed(LM_base):
@@ -120,25 +125,26 @@ class HW4Prob2_Fixed(LM_base):
         new = self.full_conditional_sampler_sigma2(new)
         self.MC_sample.append(new)
 
-fixed_initial = [1,[0,0,0,0,0,0]]
-fixed_inst = HW4Prob2_Fixed(y, fixed_X, fixed_initial)
-fixed_inst.generate_samples(10000)
-# print(fixed_inst.MC_sample[-1])
-fixed_beta = [sample[1] for sample in fixed_inst.MC_sample]
-fixed_others = [[sample[0]] for sample in fixed_inst.MC_sample]
-fixed_diag_inst1 = MCMC_Diag()
-fixed_diag_inst1.set_mc_samples_from_list(fixed_beta)
-fixed_diag_inst1.set_variable_names(["beta"+str(i) for i in range(6)])
-fixed_diag_inst1.show_traceplot((2,3))
-fixed_diag_inst1.show_hist((2,3))
-fixed_diag_inst1.show_acf(30,(2,3))
+if __name__=="__main__":
+    fixed_initial = [1,[0,0,0,0,0,0]]
+    fixed_inst = HW4Prob2_Fixed(y, fixed_X, fixed_initial)
+    fixed_inst.generate_samples(10000)
+    # print(fixed_inst.MC_sample[-1])
+    fixed_beta = [sample[1] for sample in fixed_inst.MC_sample]
+    fixed_others = [[sample[0]] for sample in fixed_inst.MC_sample]
+    fixed_diag_inst1 = MCMC_Diag()
+    fixed_diag_inst1.set_mc_samples_from_list(fixed_beta)
+    fixed_diag_inst1.set_variable_names(["beta"+str(i) for i in range(6)])
+    fixed_diag_inst1.show_traceplot((2,3))
+    fixed_diag_inst1.show_hist((2,3))
+    fixed_diag_inst1.show_acf(30,(2,3))
 
-fixed_diag_inst2 = MCMC_Diag()
-fixed_diag_inst2.set_mc_samples_from_list(fixed_others)
-fixed_diag_inst2.set_variable_names(["sigma2"])
-fixed_diag_inst2.show_traceplot((1,1))
-fixed_diag_inst2.show_hist((1,1))
-fixed_diag_inst2.show_acf(30,(1,1))
+    fixed_diag_inst2 = MCMC_Diag()
+    fixed_diag_inst2.set_mc_samples_from_list(fixed_others)
+    fixed_diag_inst2.set_variable_names(["sigma2"])
+    fixed_diag_inst2.show_traceplot((1,1))
+    fixed_diag_inst2.show_hist((1,1))
+    fixed_diag_inst2.show_acf(30,(1,1))
 
 
 
@@ -223,35 +229,36 @@ class HW4Prob2_Rand_Int(LM_base):
         new = self.full_conditional_sampler_tau2_0(new)
         self.MC_sample.append(new)
 
-# 0       1                                          2    3
-#[sigma2, [[beta0_1,...,beta0_20], beta1,...,beta5], mu0, tau2_0]
-rand_int_initial = [1,[[0 for _ in range(20)],0,0,0,0,0],0,1]
-rand_int_inst = HW4Prob2_Rand_Int(y, rand_int_X, rand_int_initial)
-rand_int_inst.generate_samples(10000)
+if __name__=="__main__":
+    # 0       1                                          2    3
+    #[sigma2, [[beta0_1,...,beta0_20], beta1,...,beta5], mu0, tau2_0]
+    rand_int_initial = [1,[[0 for _ in range(20)],0,0,0,0,0],0,1]
+    rand_int_inst = HW4Prob2_Rand_Int(y, rand_int_X, rand_int_initial)
+    rand_int_inst.generate_samples(10000)
 
-rand_int_beta0 = [sample[1][0] for sample in rand_int_inst.MC_sample]
-rand_int_beta1_5 = [sample[1][1:] for sample in rand_int_inst.MC_sample]
-rand_int_others = [[sample[0], sample[2], sample[3]] for sample in rand_int_inst.MC_sample]
-rand_int_diag_inst1 = MCMC_Diag()
-rand_int_diag_inst1.set_mc_samples_from_list(rand_int_beta0)
-rand_int_diag_inst1.set_variable_names(["beta0_"+str(i) for i in range(1,21)])
-rand_int_diag_inst1.show_traceplot((4,5))
-rand_int_diag_inst1.show_hist((4,5))
-rand_int_diag_inst1.show_acf(30,(4,5))
+    rand_int_beta0 = [sample[1][0] for sample in rand_int_inst.MC_sample]
+    rand_int_beta1_5 = [sample[1][1:] for sample in rand_int_inst.MC_sample]
+    rand_int_others = [[sample[0], sample[2], sample[3]] for sample in rand_int_inst.MC_sample]
+    rand_int_diag_inst1 = MCMC_Diag()
+    rand_int_diag_inst1.set_mc_samples_from_list(rand_int_beta0)
+    rand_int_diag_inst1.set_variable_names(["beta0_"+str(i) for i in range(1,21)])
+    rand_int_diag_inst1.show_traceplot((4,5))
+    rand_int_diag_inst1.show_hist((4,5))
+    rand_int_diag_inst1.show_acf(30,(4,5))
 
-rand_int_diag_inst2 = MCMC_Diag()
-rand_int_diag_inst2.set_mc_samples_from_list(rand_int_beta1_5)
-rand_int_diag_inst2.set_variable_names(["beta"+str(i) for i in range(1,6)])
-rand_int_diag_inst2.show_traceplot((2,3))
-rand_int_diag_inst2.show_hist((2,3))
-rand_int_diag_inst2.show_acf(30,(2,3))
+    rand_int_diag_inst2 = MCMC_Diag()
+    rand_int_diag_inst2.set_mc_samples_from_list(rand_int_beta1_5)
+    rand_int_diag_inst2.set_variable_names(["beta"+str(i) for i in range(1,6)])
+    rand_int_diag_inst2.show_traceplot((2,3))
+    rand_int_diag_inst2.show_hist((2,3))
+    rand_int_diag_inst2.show_acf(30,(2,3))
 
-rand_int_diag_inst3 = MCMC_Diag()
-rand_int_diag_inst3.set_mc_samples_from_list(rand_int_others)
-rand_int_diag_inst3.set_variable_names(["sigma2", "mu0", "tau2_0"])
-rand_int_diag_inst3.show_traceplot((1,3))
-rand_int_diag_inst3.show_hist((1,3))
-rand_int_diag_inst3.show_acf(30,(1,3))
+    rand_int_diag_inst3 = MCMC_Diag()
+    rand_int_diag_inst3.set_mc_samples_from_list(rand_int_others)
+    rand_int_diag_inst3.set_variable_names(["sigma2", "mu0", "tau2_0"])
+    rand_int_diag_inst3.show_traceplot((1,3))
+    rand_int_diag_inst3.show_hist((1,3))
+    rand_int_diag_inst3.show_acf(30,(1,3))
 
 
 
@@ -343,85 +350,86 @@ class HW4Prob2_Rand_Slope(LM_base):
         new = self.full_conditional_sampler_mu(new)
         new = self.full_conditional_sampler_tau2(new)
         self.MC_sample.append(new)
-    
-# 0       1                                                                            2              3
-#[sigma2, [[beta0_1,...,beta0_20], [beta1_1,...,beta1_20],...,[beta5_1,...,beta5_20]], [mu0,...,mu5], [tau2_0,...,tau2_5]]
-rand_slope_initial = [1, [[0 for _ in range(20)] for _ in range(6)], [0 for _ in range(6)], [1 for _ in range(6)]]
-rand_slope_inst = HW4Prob2_Rand_Slope(y, rand_slope_X, rand_slope_initial)
 
-rand_slope_inst.generate_samples(10000)
+if __name__=="__main__":
+    # 0       1                                                                            2              3
+    #[sigma2, [[beta0_1,...,beta0_20], [beta1_1,...,beta1_20],...,[beta5_1,...,beta5_20]], [mu0,...,mu5], [tau2_0,...,tau2_5]]
+    rand_slope_initial = [1, [[0 for _ in range(20)] for _ in range(6)], [0 for _ in range(6)], [1 for _ in range(6)]]
+    rand_slope_inst = HW4Prob2_Rand_Slope(y, rand_slope_X, rand_slope_initial)
 
-rand_slope_beta0 = [sample[1][0] for sample in rand_slope_inst.MC_sample]
-rand_slope_beta1 = [sample[1][1] for sample in rand_slope_inst.MC_sample]
-rand_slope_beta2 = [sample[1][2] for sample in rand_slope_inst.MC_sample]
-rand_slope_beta3 = [sample[1][3] for sample in rand_slope_inst.MC_sample]
-rand_slope_beta4 = [sample[1][4] for sample in rand_slope_inst.MC_sample]
-rand_slope_beta5 = [sample[1][5] for sample in rand_slope_inst.MC_sample]
-rand_slope_beta5 = [sample[1][5] for sample in rand_slope_inst.MC_sample]
-rand_slope_mu = [sample[2] for sample in rand_slope_inst.MC_sample]
-rand_slope_tau2 = [sample[3] for sample in rand_slope_inst.MC_sample]
-rand_slope_sigma2 = [[sample[0]] for sample in rand_slope_inst.MC_sample]
+    rand_slope_inst.generate_samples(10000)
 
-rand_slope_diag_inst0 = MCMC_Diag()
-rand_slope_diag_inst0.set_mc_samples_from_list(rand_slope_beta0)
-rand_slope_diag_inst0.set_variable_names(["beta0_"+str(i) for i in range(1,21)])
-rand_slope_diag_inst0.show_traceplot((4,5))
-rand_slope_diag_inst0.show_hist((4,5))
-rand_slope_diag_inst0.show_acf(30,(4,5))
+    rand_slope_beta0 = [sample[1][0] for sample in rand_slope_inst.MC_sample]
+    rand_slope_beta1 = [sample[1][1] for sample in rand_slope_inst.MC_sample]
+    rand_slope_beta2 = [sample[1][2] for sample in rand_slope_inst.MC_sample]
+    rand_slope_beta3 = [sample[1][3] for sample in rand_slope_inst.MC_sample]
+    rand_slope_beta4 = [sample[1][4] for sample in rand_slope_inst.MC_sample]
+    rand_slope_beta5 = [sample[1][5] for sample in rand_slope_inst.MC_sample]
+    rand_slope_beta5 = [sample[1][5] for sample in rand_slope_inst.MC_sample]
+    rand_slope_mu = [sample[2] for sample in rand_slope_inst.MC_sample]
+    rand_slope_tau2 = [sample[3] for sample in rand_slope_inst.MC_sample]
+    rand_slope_sigma2 = [[sample[0]] for sample in rand_slope_inst.MC_sample]
 
-rand_slope_diag_inst1 = MCMC_Diag()
-rand_slope_diag_inst1.set_mc_samples_from_list(rand_slope_beta1)
-rand_slope_diag_inst1.set_variable_names(["beta1_"+str(i) for i in range(1,21)])
-rand_slope_diag_inst1.show_traceplot((4,5))
-rand_slope_diag_inst1.show_hist((4,5))
-rand_slope_diag_inst1.show_acf(30,(4,5))
+    rand_slope_diag_inst0 = MCMC_Diag()
+    rand_slope_diag_inst0.set_mc_samples_from_list(rand_slope_beta0)
+    rand_slope_diag_inst0.set_variable_names(["beta0_"+str(i) for i in range(1,21)])
+    rand_slope_diag_inst0.show_traceplot((4,5))
+    rand_slope_diag_inst0.show_hist((4,5))
+    rand_slope_diag_inst0.show_acf(30,(4,5))
 
-rand_slope_diag_inst2 = MCMC_Diag()
-rand_slope_diag_inst2.set_mc_samples_from_list(rand_slope_beta2)
-rand_slope_diag_inst2.set_variable_names(["beta2_"+str(i) for i in range(1,21)])
-rand_slope_diag_inst2.show_traceplot((4,5))
-rand_slope_diag_inst2.show_hist((4,5))
-rand_slope_diag_inst2.show_acf(30,(4,5))
+    rand_slope_diag_inst1 = MCMC_Diag()
+    rand_slope_diag_inst1.set_mc_samples_from_list(rand_slope_beta1)
+    rand_slope_diag_inst1.set_variable_names(["beta1_"+str(i) for i in range(1,21)])
+    rand_slope_diag_inst1.show_traceplot((4,5))
+    rand_slope_diag_inst1.show_hist((4,5))
+    rand_slope_diag_inst1.show_acf(30,(4,5))
 
-rand_slope_diag_inst3 = MCMC_Diag()
-rand_slope_diag_inst3.set_mc_samples_from_list(rand_slope_beta3)
-rand_slope_diag_inst3.set_variable_names(["beta3_"+str(i) for i in range(1,21)])
-rand_slope_diag_inst3.show_traceplot((4,5))
-rand_slope_diag_inst3.show_hist((4,5))
-rand_slope_diag_inst3.show_acf(30,(4,5))
+    rand_slope_diag_inst2 = MCMC_Diag()
+    rand_slope_diag_inst2.set_mc_samples_from_list(rand_slope_beta2)
+    rand_slope_diag_inst2.set_variable_names(["beta2_"+str(i) for i in range(1,21)])
+    rand_slope_diag_inst2.show_traceplot((4,5))
+    rand_slope_diag_inst2.show_hist((4,5))
+    rand_slope_diag_inst2.show_acf(30,(4,5))
 
-rand_slope_diag_inst4 = MCMC_Diag()
-rand_slope_diag_inst4.set_mc_samples_from_list(rand_slope_beta4)
-rand_slope_diag_inst4.set_variable_names(["beta4_"+str(i) for i in range(1,21)])
-rand_slope_diag_inst4.show_traceplot((4,5))
-rand_slope_diag_inst4.show_hist((4,5))
-rand_slope_diag_inst4.show_acf(30,(4,5))
+    rand_slope_diag_inst3 = MCMC_Diag()
+    rand_slope_diag_inst3.set_mc_samples_from_list(rand_slope_beta3)
+    rand_slope_diag_inst3.set_variable_names(["beta3_"+str(i) for i in range(1,21)])
+    rand_slope_diag_inst3.show_traceplot((4,5))
+    rand_slope_diag_inst3.show_hist((4,5))
+    rand_slope_diag_inst3.show_acf(30,(4,5))
 
-rand_slope_diag_inst5 = MCMC_Diag()
-rand_slope_diag_inst5.set_mc_samples_from_list(rand_slope_beta5)
-rand_slope_diag_inst5.set_variable_names(["beta5_"+str(i) for i in range(1,21)])
-rand_slope_diag_inst5.show_traceplot((4,5))
-rand_slope_diag_inst5.show_hist((4,5))
-rand_slope_diag_inst5.show_acf(30,(4,5))
+    rand_slope_diag_inst4 = MCMC_Diag()
+    rand_slope_diag_inst4.set_mc_samples_from_list(rand_slope_beta4)
+    rand_slope_diag_inst4.set_variable_names(["beta4_"+str(i) for i in range(1,21)])
+    rand_slope_diag_inst4.show_traceplot((4,5))
+    rand_slope_diag_inst4.show_hist((4,5))
+    rand_slope_diag_inst4.show_acf(30,(4,5))
 
-rand_slope_diag_inst6 = MCMC_Diag()
-rand_slope_diag_inst6.set_mc_samples_from_list(rand_slope_mu)
-rand_slope_diag_inst6.set_variable_names(["mu"+str(i) for i in range(6)])
-rand_slope_diag_inst6.show_traceplot((2,3))
-rand_slope_diag_inst6.show_hist((2,3))
-rand_slope_diag_inst6.show_acf(30,(2,3))
+    rand_slope_diag_inst5 = MCMC_Diag()
+    rand_slope_diag_inst5.set_mc_samples_from_list(rand_slope_beta5)
+    rand_slope_diag_inst5.set_variable_names(["beta5_"+str(i) for i in range(1,21)])
+    rand_slope_diag_inst5.show_traceplot((4,5))
+    rand_slope_diag_inst5.show_hist((4,5))
+    rand_slope_diag_inst5.show_acf(30,(4,5))
 
-rand_slope_diag_inst7 = MCMC_Diag()
-rand_slope_diag_inst7.set_mc_samples_from_list(rand_slope_tau2)
-rand_slope_diag_inst7.set_variable_names(["tau2_"+str(i) for i in range(6)])
-rand_slope_diag_inst7.show_traceplot((2,3))
-rand_slope_diag_inst7.show_hist((2,3))
-rand_slope_diag_inst7.show_acf(30,(2,3))
+    rand_slope_diag_inst6 = MCMC_Diag()
+    rand_slope_diag_inst6.set_mc_samples_from_list(rand_slope_mu)
+    rand_slope_diag_inst6.set_variable_names(["mu"+str(i) for i in range(6)])
+    rand_slope_diag_inst6.show_traceplot((2,3))
+    rand_slope_diag_inst6.show_hist((2,3))
+    rand_slope_diag_inst6.show_acf(30,(2,3))
 
-rand_slope_diag_inst8 = MCMC_Diag()
-rand_slope_diag_inst8.set_mc_samples_from_list(rand_slope_sigma2)
-rand_slope_diag_inst8.set_variable_names(["sigma2"])
-rand_slope_diag_inst8.show_traceplot((1,1))
-rand_slope_diag_inst8.show_hist((1,1))
-rand_slope_diag_inst8.show_acf(30,(1,1))
+    rand_slope_diag_inst7 = MCMC_Diag()
+    rand_slope_diag_inst7.set_mc_samples_from_list(rand_slope_tau2)
+    rand_slope_diag_inst7.set_variable_names(["tau2_"+str(i) for i in range(6)])
+    rand_slope_diag_inst7.show_traceplot((2,3))
+    rand_slope_diag_inst7.show_hist((2,3))
+    rand_slope_diag_inst7.show_acf(30,(2,3))
+
+    rand_slope_diag_inst8 = MCMC_Diag()
+    rand_slope_diag_inst8.set_mc_samples_from_list(rand_slope_sigma2)
+    rand_slope_diag_inst8.set_variable_names(["sigma2"])
+    rand_slope_diag_inst8.show_traceplot((1,1))
+    rand_slope_diag_inst8.show_hist((1,1))
+    rand_slope_diag_inst8.show_acf(30,(1,1))
 

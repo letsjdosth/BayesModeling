@@ -1,10 +1,13 @@
 import csv
+from random import seed
 
 import numpy as np
 from bayesian_tools.LM_Core import LM_base
 from bayesian_tools.MCMC_Core import MCMC_Diag
 from special_dist_sampler.sampler_gamma import Sampler_univariate_InvGamma
 
+if __name__=="__main__":
+    seed(20220530)
 
 class BroadwayData:
     def __init__(self):
@@ -56,9 +59,10 @@ class BroadwayData:
         prob4_X = np.c_[self.show_ind_mat, self.week_ind_mat, self.year_value_mat]
         return (np.array(self.gross), prob4_X, self.id_show, self.id_week)
 
-factory_inst = BroadwayData()
-y, prob3_X, id_show, id_year = factory_inst.get_yX_show_year_for_prob3()
-y, prob4_X, id_show, id_week = factory_inst.get_yX_show_week_for_prob4()
+if __name__=="__main__":
+    factory_inst = BroadwayData()
+    y, prob3_X, id_show, id_year = factory_inst.get_yX_show_year_for_prob3()
+    y, prob4_X, id_show, id_week = factory_inst.get_yX_show_week_for_prob4()
 
 
 class HW4Prob3(LM_base):
@@ -154,39 +158,40 @@ class HW4Prob3(LM_base):
 
 
 
-# 0       1                       2                   3    4
-#[sigma2, [alpha_1,...,alpha_10], [beta1,...,beta21], mu_b, tau2_b]
-prob3_initial = [0.1, [0 for _ in range(10)], [0 for _ in range(21)], 0, 0.1]
-prob3_inst = HW4Prob3(y, prob3_X, prob3_initial)
-prob3_inst.generate_samples(10000)
+if __name__=="__main__":
+    # 0       1                       2                   3    4
+    #[sigma2, [alpha_1,...,alpha_10], [beta1,...,beta21], mu_b, tau2_b]
+    prob3_initial = [0.1, [0 for _ in range(10)], [0 for _ in range(21)], 0, 0.1]
+    prob3_inst = HW4Prob3(y, prob3_X, prob3_initial)
+    prob3_inst.generate_samples(10000)
 
-# print(prob3_inst.MC_sample[-2])
-# print(prob3_inst.MC_sample[-1])
+    # print(prob3_inst.MC_sample[-2])
+    # print(prob3_inst.MC_sample[-1])
 
-prob3_alpha = [sample[1] for sample in prob3_inst.MC_sample]
-prob3_beta = [sample[2] for sample in prob3_inst.MC_sample]
-prob3_others = [[sample[0], sample[3], sample[4]] for sample in prob3_inst.MC_sample]
+    prob3_alpha = [sample[1] for sample in prob3_inst.MC_sample]
+    prob3_beta = [sample[2] for sample in prob3_inst.MC_sample]
+    prob3_others = [[sample[0], sample[3], sample[4]] for sample in prob3_inst.MC_sample]
 
-prob3_diag_inst1 = MCMC_Diag()
-prob3_diag_inst1.set_mc_samples_from_list(prob3_alpha)
-prob3_diag_inst1.set_variable_names(["alpha_"+str(i) for i in range(1,11)])
-prob3_diag_inst1.show_traceplot((3,4))
-prob3_diag_inst1.show_hist((3,4))
-prob3_diag_inst1.show_acf(30,(3,4))
+    prob3_diag_inst1 = MCMC_Diag()
+    prob3_diag_inst1.set_mc_samples_from_list(prob3_alpha)
+    prob3_diag_inst1.set_variable_names(["alpha_"+str(i) for i in range(1,11)])
+    prob3_diag_inst1.show_traceplot((3,4))
+    prob3_diag_inst1.show_hist((3,4))
+    prob3_diag_inst1.show_acf(30,(3,4))
 
-prob3_diag_inst2 = MCMC_Diag()
-prob3_diag_inst2.set_mc_samples_from_list(prob3_beta)
-prob3_diag_inst2.set_variable_names(["beta_"+str(i) for i in range(1,22)])
-prob3_diag_inst2.show_traceplot((3,7))
-prob3_diag_inst2.show_hist((3,7))
-prob3_diag_inst2.show_acf(30,(3,7))
+    prob3_diag_inst2 = MCMC_Diag()
+    prob3_diag_inst2.set_mc_samples_from_list(prob3_beta)
+    prob3_diag_inst2.set_variable_names(["beta_"+str(i) for i in range(1,22)])
+    prob3_diag_inst2.show_traceplot((3,7))
+    prob3_diag_inst2.show_hist((3,7))
+    prob3_diag_inst2.show_acf(30,(3,7))
 
-prob3_diag_inst3 = MCMC_Diag()
-prob3_diag_inst3.set_mc_samples_from_list(prob3_others)
-prob3_diag_inst3.set_variable_names(["sigma2", "mu_b", "tau2_b"])
-prob3_diag_inst3.show_traceplot((1,3))
-prob3_diag_inst3.show_hist((1,3))
-prob3_diag_inst3.show_acf(30,(1,3))
+    prob3_diag_inst3 = MCMC_Diag()
+    prob3_diag_inst3.set_mc_samples_from_list(prob3_others)
+    prob3_diag_inst3.set_variable_names(["sigma2", "mu_b", "tau2_b"])
+    prob3_diag_inst3.show_traceplot((1,3))
+    prob3_diag_inst3.show_hist((1,3))
+    prob3_diag_inst3.show_acf(30,(1,3))
 
 
 
@@ -317,46 +322,47 @@ class HW4Prob4(LM_base):
         self.MC_sample.append(new)
 
 
-# 0        1                       2                   3                     4             5
-#[sigma2, [alpha_1,...,alpha_10], [beta1,...,beta53], [gamma1,...,gamma10], [mu_b, mu_r], [tau2_b, tau2_r]]
-prob4_initial = [0.1, [0 for _ in range(10)], [0 for _ in range(53)], [0 for _ in range(10)], [0, 0], [0.1, 0.1]]
-prob4_inst = HW4Prob4(y, prob4_X, prob4_initial)
-prob4_inst.generate_samples(10000)
+if __name__=="__main__":
+    # 0        1                       2                   3                     4             5
+    #[sigma2, [alpha_1,...,alpha_10], [beta1,...,beta53], [gamma1,...,gamma10], [mu_b, mu_r], [tau2_b, tau2_r]]
+    prob4_initial = [0.1, [0 for _ in range(10)], [0 for _ in range(53)], [0 for _ in range(10)], [0, 0], [0.1, 0.1]]
+    prob4_inst = HW4Prob4(y, prob4_X, prob4_initial)
+    prob4_inst.generate_samples(10000)
 
-# print(prob4_inst.MC_sample[-2])
-# print(prob4_inst.MC_sample[-1])
+    # print(prob4_inst.MC_sample[-2])
+    # print(prob4_inst.MC_sample[-1])
 
-prob4_alpha = [sample[1] for sample in prob4_inst.MC_sample]
-prob4_beta = [sample[2] for sample in prob4_inst.MC_sample]
-prob4_gamma = [sample[3] for sample in prob4_inst.MC_sample]
-prob4_others = [[sample[0], sample[4][0], sample[4][1], sample[5][0], sample[5][1]] for sample in prob4_inst.MC_sample]
+    prob4_alpha = [sample[1] for sample in prob4_inst.MC_sample]
+    prob4_beta = [sample[2] for sample in prob4_inst.MC_sample]
+    prob4_gamma = [sample[3] for sample in prob4_inst.MC_sample]
+    prob4_others = [[sample[0], sample[4][0], sample[4][1], sample[5][0], sample[5][1]] for sample in prob4_inst.MC_sample]
 
-prob4_diag_inst1 = MCMC_Diag()
-prob4_diag_inst1.set_mc_samples_from_list(prob4_alpha)
-prob4_diag_inst1.set_variable_names(["alpha_"+str(i) for i in range(1,11)])
-prob4_diag_inst1.show_traceplot((3,4))
-prob4_diag_inst1.show_hist((3,4))
-prob4_diag_inst1.show_acf(30,(3,4))
+    prob4_diag_inst1 = MCMC_Diag()
+    prob4_diag_inst1.set_mc_samples_from_list(prob4_alpha)
+    prob4_diag_inst1.set_variable_names(["alpha_"+str(i) for i in range(1,11)])
+    prob4_diag_inst1.show_traceplot((3,4))
+    prob4_diag_inst1.show_hist((3,4))
+    prob4_diag_inst1.show_acf(30,(3,4))
 
-prob4_diag_inst2 = MCMC_Diag()
-prob4_diag_inst2.set_mc_samples_from_list(prob4_beta)
-prob4_diag_inst2.set_variable_names(["beta_"+str(i) for i in range(1,54)])
-prob4_diag_inst2.show_traceplot((3,7), [i for i in range(21)])
-# prob4_diag_inst2.show_hist((3,7), [i for i in range(21)])
-prob4_diag_inst2.show_acf(30,(3,7), [i for i in range(21)])
+    prob4_diag_inst2 = MCMC_Diag()
+    prob4_diag_inst2.set_mc_samples_from_list(prob4_beta)
+    prob4_diag_inst2.set_variable_names(["beta_"+str(i) for i in range(1,54)])
+    prob4_diag_inst2.show_traceplot((3,7), [i for i in range(21)])
+    # prob4_diag_inst2.show_hist((3,7), [i for i in range(21)])
+    prob4_diag_inst2.show_acf(30,(3,7), [i for i in range(21)])
 
 
-prob4_diag_inst3 = MCMC_Diag()
-prob4_diag_inst3.set_mc_samples_from_list(prob4_gamma)
-prob4_diag_inst3.set_variable_names(["gamma_"+str(i) for i in range(1,11)])
-prob4_diag_inst3.show_traceplot((3,4))
-prob4_diag_inst3.show_hist((3,4))
-prob4_diag_inst3.show_acf(30,(3,4))
+    prob4_diag_inst3 = MCMC_Diag()
+    prob4_diag_inst3.set_mc_samples_from_list(prob4_gamma)
+    prob4_diag_inst3.set_variable_names(["gamma_"+str(i) for i in range(1,11)])
+    prob4_diag_inst3.show_traceplot((3,4))
+    prob4_diag_inst3.show_hist((3,4))
+    prob4_diag_inst3.show_acf(30,(3,4))
 
-prob4_diag_inst4 = MCMC_Diag()
-prob4_diag_inst4.set_mc_samples_from_list(prob4_others)
-prob4_diag_inst4.set_variable_names(["sigma2", "mu_b", "mu_r", "tau2_b", "tau2_r"])
-prob4_diag_inst4.show_traceplot((2,3))
-prob4_diag_inst4.show_hist((2,3))
-prob4_diag_inst4.show_acf(30,(2,3))
+    prob4_diag_inst4 = MCMC_Diag()
+    prob4_diag_inst4.set_mc_samples_from_list(prob4_others)
+    prob4_diag_inst4.set_variable_names(["sigma2", "mu_b", "mu_r", "tau2_b", "tau2_r"])
+    prob4_diag_inst4.show_traceplot((2,3))
+    prob4_diag_inst4.show_hist((2,3))
+    prob4_diag_inst4.show_acf(30,(2,3))
 
