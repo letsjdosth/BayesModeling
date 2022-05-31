@@ -2,6 +2,7 @@ import csv
 from random import seed
 
 import numpy as np
+
 from bayesian_tools.LM_Core import LM_base
 from bayesian_tools.MCMC_Core import MCMC_Diag
 from special_dist_sampler.sampler_gamma import Sampler_univariate_InvGamma
